@@ -26,6 +26,7 @@ from .providers import CRUISE_LINES, ClaudeResearchProvider, ResearchRequest, ru
 from .providers.claude_research import draft_client_intro
 from .providers.celebrity import CelebrityProvider
 from .providers.royal_caribbean import RoyalCaribbeanProvider
+from .providers.viking import VikingProvider
 
 log = logging.getLogger(__name__)
 HERE = Path(__file__).parent
@@ -73,7 +74,7 @@ def create_app(
     claude = ClaudeResearchProvider(claude_client, settings.model)
     if direct_providers is None:
         cf = CloudflareBrowser(settings.cf_account_id, settings.cf_api_token)
-        direct_providers = [RoyalCaribbeanProvider(cf, settings.rccl_graphql_url), CelebrityProvider(cf)]
+        direct_providers = [RoyalCaribbeanProvider(cf, settings.rccl_graphql_url), CelebrityProvider(cf), VikingProvider(cf)]
 
     @app.middleware("http")
     async def same_origin_posts(request: Request, call_next):
