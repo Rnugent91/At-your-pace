@@ -183,3 +183,22 @@ def test_no_claude_call_when_line_includes_the_missing_kinds():
     fake = FakeClaude(sample_research(REQ))
     r, used = run_research(REQ, [IncludesWifiProvider()], ClaudeResearchProvider(fake, "m"))
     assert used == "Direct" and {a.kind for a in r.addons} == {"beverage"}
+
+
+class UnpricedWifiProvider(DrinksOnlyProvider):
+    """Lists Wi-Fi plans but can't price them before booking (like MSC)."""
+
+    included_addon_kinds = ("dining", "excursion")
+
+    def research(self, req):
+        r = super().research(req)
+        wifi = sample_research(req).addons[2].model_copy(update={"price": None, "name": "Browse"})
+        r.addons.append(wifi)
+        return r
+
+
+def test_unpriced_addons_are_replaced_by_researched_prices():
+    fake = FakeClaude(sample_research(REQ))
+    r, _ = run_research(REQ, [UnpricedWifiProvider()], ClaudeResearchProvider(fake, "m"))
+    wifi = [a for a in r.addons if a.kind == "internet"]
+    assert wifi and all(a.price is not None for a in wifi) and "Browse" not in {a.name for a in wifi}

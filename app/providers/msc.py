@@ -41,6 +41,37 @@ SEARCH_URL = "https://algoliabff-prod-eastus2-001.msccruises.com/v4/search/itine
 # Same index, but one hit per cruise instead of one per itinerary (used by the catalog).
 CRUISES_URL = "https://algoliabff-prod-eastus2-001.msccruises.com/v1/search/cruises/"
 ITINERARY_URL = "https://services.msccruises.com/itinerary/data/{cid}/"
+# MSC's public excursion catalog (names, categories, durations). Its price fields are
+# always 0: MSC only prices excursions in My MSC once a booking exists.
+EXCURSIONS_URL = "https://services.msccruises.com/myarea/static/excursions"
+SERVICE_CHARGES_URL = "https://www.msccruisesusa.com/manage-booking/before-you-go/service-charges"
+PACKAGES_NOTE = "MSC prices this only in My MSC after booking (pre-cruise prices beat onboard prices)."
+
+# Hotel service charge, per guest (2+) per night, for cruises booked from May 11 2026 / July 2 2026,
+# from msccruisesusa.com/manage-booking/before-you-go/service-charges (read Sept 2026).
+# commArea → (standard, Yacht Club, currency). EUR regions aren't priced in USD quotes.
+SERVICE_CHARGES = {
+    "CAR": (17, 23, "USD"), "ALA": (17, 23, "USD"), "PAN": (17, 23, "USD"), "NCA": (17, 23, "USD"),
+    "BHM": (17, 23, "USD"), "NOA": (17, 23, "USD"),
+    "FAE": (18, 21, "USD"), "SOA": (19, 23, "USD"), "INW": (17, 21, "USD"),
+    "MED": (12, 16, "EUR"), "MEW": (12, 16, "EUR"), "NOR": (12, 16, "EUR"), "SOC": (12, 16, "EUR"),
+    "EMW": (12, 16, "EUR"), "RED": (12, 16, "EUR"), "WOR": (12, 16, "EUR"), "CAN": (12, 16, "EUR"),
+}
+
+# Packages MSC sells separately (msccruisesusa.com on-board pages, Sept 2026); no public prices.
+PACKAGES = [
+    ("beverage", "Premium Extra Package", "per_person", "per person, whole cruise",
+     "Premium spirits, cocktails, wines by the glass, beers, soft drinks, coffee; max 15 alcoholic drinks/day. "
+     "Gratuities included. Every adult in the stateroom must buy the same package."),
+    ("beverage", "Alcohol-Free Package", "per_person", "per person, whole cruise",
+     "Soft drinks, juices, 0.0% wine & beer, specialty coffee. Gratuities included."),
+    ("beverage", "Minors Package", "per_person", "per person, whole cruise",
+     "For kids, teens & under-21s: filtered water, juices and soda. Gratuities included."),
+    ("internet", "Browse Cruise Package", "per_device", "per device, whole cruise",
+     "Web, email and social media. Also sold per day at a higher daily rate."),
+    ("internet", "Browse & Stream Cruise Package", "per_device", "per device, whole cruise",
+     "Browsing plus video streaming. Also sold per day at a higher daily rate."),
+]
 SITE = "https://www.msccruisesusa.com"
 
 # Akamai scores the whole header set; the UA alone (or a partial set) gets a 401.
@@ -253,6 +284,12 @@ class MSCProvider:
         drinks = self.drinks_addon(deltas, research.nights, booking_url)
         if drinks:
             research.addons.append(drinks)
+        try:
+            has_yc = any(r.name.startswith("MSC Yacht Club") for r in research.staterooms)
+            research.addons += self.extra_addons(hit, itin_raw if isinstance(itin_raw, dict) else {}, warnings, has_yc)
+        except Exception as exc:  # add-ons must never fail research
+            log.exception("MSC add-ons failed")
+            warnings.append(f"MSC add-ons could not be loaded: {exc}")
         return research
 
     # ── Fares ────────────────────────────────────────────────────────────
@@ -616,3 +653,86 @@ class MSCProvider:
                     taxes_fees_per_person=float(taxes) if taxes is not None else None,
                     currency="USD",
                 )
+
+    # ── Add-ons beyond the Drinks & Wi-Fi fare ───────────────────────────
+
+    def extra_addons(self, hit: dict, itin: dict, warnings: list[str], has_yc: bool = True) -> list[AddOn]:
+        addons = [self.service_charge_addon(hit, yacht_club=False)]
+        if has_yc:
+            addons.append(self.service_charge_addon(hit, yacht_club=True))
+        addons = [a for a in addons if a]
+        addons += [
+            AddOn(kind=kind, name=name, price=None, price_unit=unit, unit_label=label, port=None,
+                  description=f"{desc} {PACKAGES_NOTE}", source=f"{SITE}/on-board")
+            for kind, name, unit, label, desc in PACKAGES
+        ]
+        excursions = self.fetch_excursions(itin.get("Days") or [], warnings)
+        addons += excursions
+        warnings.append(
+            "MSC doesn't publish drink-package, Wi-Fi, excursion, spa or specialty-dining prices before booking "
+            "(they're priced in My MSC once booked); those add-ons are listed without a price. "
+            "The Drinks & Wi-Fi fare and the hotel service charge are priced."
+        )
+        return addons
+
+    @staticmethod
+    def service_charge_addon(hit: dict, yacht_club: bool) -> Optional[AddOn]:
+        areas = [a.get("key") for a in hit.get("commArea") or []]
+        rate = next((SERVICE_CHARGES[a] for a in areas if a in SERVICE_CHARGES), None)
+        region = ", ".join(a.get("value", "") for a in hit.get("commArea") or []) or "this itinerary"
+        name = "Hotel service charge" + (" (MSC Yacht Club)" if yacht_club else "")
+        desc = (f"Added automatically to the onboard account for every guest 2+ ({region}); can be prepaid "
+                "at booking. Bars add an 18% service charge on North America itineraries (15% elsewhere); "
+                "drink packages already include it.")
+        if rate is None:
+            if yacht_club:
+                return None
+            return AddOn(kind="other", name=name, price=None, price_unit="per_person_per_day",
+                         unit_label="per guest, per night", port=None,
+                         description=desc + " Rate varies by region — see MSC's service-charge page.",
+                         source=SERVICE_CHARGES_URL)
+        amount, currency = rate[1 if yacht_club else 0], rate[2]
+        if currency != "USD":
+            desc += f" Rate: {amount} {currency} per guest per night (charged in {currency})."
+        return AddOn(kind="other", name=name, price=float(amount) if currency == "USD" else None,
+                     price_unit="per_person_per_day", unit_label="per guest, per night", port=None,
+                     description=desc + " Published rate for cruises booked from May 2026.",
+                     source=SERVICE_CHARGES_URL)
+
+    def fetch_excursions(self, days: list[dict], warnings: list[str]) -> list[AddOn]:
+        """MSC's excursion catalog for this sailing's ports of call (no prices before booking)."""
+        calls = days[1:-1] if len(days) > 2 else []
+        ports: dict[str, str] = {}
+        for d in calls:
+            code = (d.get("PortCode") or "").upper()
+            if code and code != "SEADAY" and not d.get("IsSeaDay"):
+                ports.setdefault(code, d.get("Name") or code)
+        if not ports:
+            return []
+        url = EXCURSIONS_URL + "?" + urlencode({"Culture": "en-US", "PortCodes": ",".join(ports)})
+        raw = self._get_many([url])[0]
+        content = (raw or {}).get("content") if isinstance(raw, dict) else None
+        if not content:
+            warnings.append("MSC's shore-excursion catalog could not be loaded.")
+            return []
+        out = []
+        for key, items in (content.get("ports") or {}).items():
+            for item in items or []:
+                if item.get("isHidden") or (item.get("type") or "excursion") != "excursion":
+                    continue
+                code = (item.get("portCode") or key).upper()
+                price = item.get("adultPrice") or None  # 0 means "not priced" in this catalog
+                bits = [(item.get("categoryDesc") or "").title(),
+                        f"{item['duration']} h" if item.get("duration") else "",
+                        f"code {item.get('code')}"]
+                out.append(AddOn(
+                    kind="excursion",
+                    name=re.sub(r"\s+", " ", item.get("title") or "").strip(),
+                    price=float(price) if price else None,
+                    price_unit="per_person",
+                    unit_label="per adult",
+                    port=ports.get(code, code),
+                    description=" · ".join(b for b in bits if b) + (". " + PACKAGES_NOTE if not price else ""),
+                    source=f"{SITE}/cruise/excursions",
+                ))
+        return out

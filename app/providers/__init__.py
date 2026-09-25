@@ -63,7 +63,7 @@ def run_research(
         gaps.append("the day-by-day itinerary")
     # Core add-on kinds a quote should offer. A provider may declare kinds its fare
     # already includes (e.g. Virgin's Wi-Fi and basic drinks) via `included_addon_kinds`.
-    have = {a.kind for a in result.addons}
+    have = {a.kind for a in result.addons if a.price is not None}  # unpriced items don't count
     skip = set(getattr(primary, "included_addon_kinds", ()))
     missing = [k for k in CORE_ADDON_KINDS if k not in have and k not in skip]
     if missing:
@@ -82,9 +82,11 @@ def run_research(
         result.warnings.append("Stateroom prices came from web research, not the cruise line's live system — verify them.")
     if not result.itinerary and fill.itinerary:
         result.itinerary = fill.itinerary
-    extra = [a for a in fill.addons if a.kind in missing]
+    extra = [a for a in fill.addons if a.kind in missing and a.price is not None]
     if extra:
-        result.addons += extra
+        # Researched prices replace the line's unpriced placeholders of the same kind.
+        filled = {a.kind for a in extra}
+        result.addons = [a for a in result.addons if a.kind not in filled or a.price is not None] + extra
         found = sorted({CORE_ADDON_KINDS[a.kind] for a in extra})
         result.warnings.append(f"Prices for {', '.join(found)} came from web research — verify them.")
     result.sources += [s for s in fill.sources if s not in result.sources]

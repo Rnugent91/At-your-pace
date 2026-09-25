@@ -20,6 +20,8 @@ def route(url: str):
     u = urlparse(url)
     q = {k: v[0] for k, v in parse_qs(u.query).items()}
     if u.netloc == "services.msccruises.com":
+        if u.path.startswith("/myarea/static/excursions"):
+            return (200, FIX["excursions"]) if q.get("PortCodes") == "POP,SJU,1SC" else (400, None)
         return (200, FIX["itinerary"]) if "AM20270306MIAMIA" in u.path else (404, None)
     if u.path.startswith("/v1/search/cruises"):
         if q.get("includeFacets") == "true":
@@ -130,7 +132,7 @@ def test_full_research_direct():
     assert yc.category == "Suite" and yc.name == "MSC Yacht Club (YIN)"
     assert yc.price_per_person + yc.taxes_fees_per_person == 3574 and "already included" in yc.notes
 
-    (drinks,) = r.addons
+    drinks = r.addons[0]
     assert drinks.kind == "beverage" and drinks.price == 392 and drinks.price_unit == "per_person"
     assert "Yacht Club" in drinks.description and "only available when booking" in drinks.description
 
@@ -142,8 +144,9 @@ def test_full_research_direct():
 def test_blocked_direct_falls_back_to_cloudflare():
     cf = FakeCF()
     r = provider(cf, blocked=True).research(ResearchRequest("MSC", "AM", "2027-03-06", adults=3))
-    # sailing lookup, itinerary+facets, fare-type samples, then 44 code queries in batches of 10
-    assert len(cf.calls) == 3 + 5
+    # sailing lookup, itinerary+facets, fare-type samples, 44 code queries in batches of 10, excursions
+    assert len(cf.calls) == 3 + 5 + 1
+    assert sum(a.kind == "excursion" for a in r.addons) == 6
     assert cf.calls[0]["url"] == "https://www.msccruisesusa.com/"
     assert len(r.staterooms) == 22 and r.addons[0].price == 392 and len(r.itinerary) == 8
     assert any("based on 2 guests" in w for w in r.warnings)
@@ -216,3 +219,42 @@ def test_429_is_retried_with_backoff():
     p._sleep = slept.append
     assert p._get_direct("https://example.test/") == {"hits": []}
     assert slept == [1.0, 1.0]
+
+
+def test_extra_addons():
+    r = provider().research(ResearchRequest("MSC", "MSC World America", "2027-03-06"))
+    by_name = {a.name: a for a in r.addons}
+    # Hotel service charge: published Caribbean rate, per guest per night; Yacht Club rate too.
+    sc = by_name["Hotel service charge"]
+    assert (sc.kind, sc.price, sc.price_unit) == ("other", 17.0, "per_person_per_day") and "18%" in sc.description
+    assert by_name["Hotel service charge (MSC Yacht Club)"].price == 23.0
+    # Packages MSC sells separately are listed, unpriced (MSC prices them only after booking).
+    for name, kind in [("Premium Extra Package", "beverage"), ("Alcohol-Free Package", "beverage"),
+                       ("Minors Package", "beverage"), ("Browse Cruise Package", "internet"),
+                       ("Browse & Stream Cruise Package", "internet")]:
+        assert by_name[name].kind == kind and by_name[name].price is None
+    assert by_name["Browse Cruise Package"].price_unit == "per_device"
+    # Excursions for the ports of call only (not Miami), mapped to the itinerary's port names.
+    exc = [a for a in r.addons if a.kind == "excursion"]
+    assert {a.port for a in exc} == {"Puerto Plata, Dominican Republic", "San Juan, Puerto Rico",
+                                     "Ocean Cay MSC Marine Reserve, Bahamas"}
+    assert len(exc) == 6 and all(a.price is None and a.price_unit == "per_person" for a in exc)
+    assert any("My MSC" in w for w in r.warnings)
+
+
+def test_service_charge_regions():
+    med = MSCProvider.service_charge_addon({"commArea": [{"key": "MED", "value": "Mediterranean"}]}, False)
+    assert med.price is None and "12 EUR" in med.description  # not quoted in USD
+    unknown = MSCProvider.service_charge_addon({"commArea": []}, False)
+    assert unknown.price is None
+    assert MSCProvider.service_charge_addon({"commArea": []}, True) is None
+
+
+def test_addon_failure_never_fails_research(monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("excursions down")
+    p = provider()
+    monkeypatch.setattr(p, "fetch_excursions", boom)
+    r = p.research(ResearchRequest("MSC", "MSC World America", "2027-03-06"))
+    assert r.staterooms and r.addons[0].price == 392
+    assert any("add-ons could not be loaded" in w for w in r.warnings)
