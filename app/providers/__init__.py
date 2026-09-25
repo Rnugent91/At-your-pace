@@ -82,6 +82,7 @@ def build_direct_providers(settings) -> list:
     from ..cf_browser import CloudflareBrowser
     from .carnival import CarnivalProvider
     from .celebrity import CelebrityProvider
+    from .disney import DisneyProvider
     from .holland_america import HollandAmericaProvider
     from .msc import MSCProvider
     from .princess import PrincessProvider
@@ -99,6 +100,7 @@ def build_direct_providers(settings) -> list:
         VirginVoyagesProvider(cf),
         PrincessProvider(cf),
         HollandAmericaProvider(cf),
+        DisneyProvider(cf),
     ]
 
 
