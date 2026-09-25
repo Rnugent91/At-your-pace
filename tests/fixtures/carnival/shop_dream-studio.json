@@ -1,0 +1,24 @@
+{
+ "categoryName": null,
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "BM2",
+    "name": "Dreams Studio Premium ",
+    "url": "/pixels-photo-packages/dreams-studio-premium-BM2",
+    "summary": null,
+    "price": {
+     "value": 749.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": ""
+    }
+   }
+  ],
+  "pagination": {
+   "numberOfPages": 1
+  },
+  "facets": []
+ }
+}

@@ -1,0 +1,182 @@
+{
+ "categoryName": null,
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "SV0",
+    "name": "Pasta Master Class",
+    "url": "/reserve-dining/pasta-master-class-SV0",
+    "summary": "Pasta Master Class",
+    "price": {
+     "value": 47.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   },
+   {
+    "code": "CKPASTA",
+    "name": "Pasta Master Class",
+    "url": "/reserve-dining/pasta-master-class-CKPASTA",
+    "summary": "Pasta Master Class",
+    "price": {
+     "value": 47.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   },
+   {
+    "code": "CUDELCAP",
+    "name": "Cucina del Capitano",
+    "url": "/reserve-dining/cucina-del-capitano-CUDELCAP",
+    "summary": "Say arrivederci to ordinary and ciao to an exciting dining experience at the restaurant that pays homage to our unique heritage. Italian-American dishes inspire",
+    "price": {
+     "value": 24.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   },
+   {
+    "code": "SEAGRILL",
+    "name": "Rudi's Seagrill",
+    "url": "/reserve-dining/rudi-s-seagrill-SEAGRILL",
+    "summary": null,
+    "price": {
+     "value": 52.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   },
+   {
+    "code": "STEAKHOUSE",
+    "name": "Steakhouse",
+    "url": "/reserve-dining/steakhouse-STEAKHOUSE",
+    "summary": "Dinner at a Carnival Fahrenheit 555 Steakhouse is much more than a meal. It's an event. For the nominal charge of $38 adult/ $12 child (12 and under), steaks gr",
+    "price": {
+     "value": 52.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   },
+   {
+    "code": "JIJI",
+    "name": "Ji Ji Asian Kitchen",
+    "url": "/reserve-dining/ji-ji-asian-kitchen-JIJI",
+    "summary": "A modern dining spot inspired by a millennia-old society, Ji Ji Asian Kitchen serves up enticing dishes in an eclectic space that brings not just good food, but",
+    "price": {
+     "value": 24.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   },
+   {
+    "code": "CHEFSTABLE",
+    "name": "The Chef's Table",
+    "url": "/reserve-dining/the-chef-s-table-CHEFSTABLE",
+    "summary": "Treat your taste buds to the experience of a lifetime, culminating in a sumptuous multicourse dinner hosted by the Master Executive Chef. Your VIP experience st",
+    "price": {
+     "value": 95.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   },
+   {
+    "code": "TEPPANYAKI",
+    "name": "Bonsai Teppanyaki",
+    "url": "/reserve-dining/bonsai-teppanyaki-TEPPANYAKI",
+    "summary": "Teppanyaki Style - On the New Carnival Horizon - The teppanyaki chef's attention to craft is front-and-center, in fact it's right there at your table! One part ",
+    "price": {
+     "value": 49.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   },
+   {
+    "code": "ILVIAGGIO",
+    "name": "Il Viaggio",
+    "url": "/reserve-dining/il-viaggio-ILVIAGGIO",
+    "summary": "Journey across Italy's renowned culinary regions, immersing yourself in a world of flavors and unparalleled service as you explore and savor the country's uniqu",
+    "price": {
+     "value": 42.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    },
+    "feesData": {
+     "subjectToGratuity": true,
+     "gratuityAmount": 20.0,
+     "subjectToServiceFee": false,
+     "serviceFee": 0.0
+    }
+   }
+  ],
+  "pagination": {
+   "numberOfPages": 1
+  },
+  "facets": []
+ }
+}

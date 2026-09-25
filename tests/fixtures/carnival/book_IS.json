@@ -92,12 +92,16 @@
     {
      "price": 520.23,
      "cruiseFeesAndExpenses": 97.23,
-     "taxesAndFees": 85.77
+     "taxesAndFees": 85.77,
+     "gratuity": 102,
+     "insurance": 79
     },
     {
      "price": 520.23,
      "cruiseFeesAndExpenses": 97.23,
-     "taxesAndFees": 85.77
+     "taxesAndFees": 85.77,
+     "gratuity": 102,
+     "insurance": 79
     }
    ]
   }

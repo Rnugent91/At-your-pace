@@ -25,6 +25,7 @@ import logging
 import re
 import threading
 import time
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from typing import Iterator, Optional
@@ -97,9 +98,23 @@ SEARCH_ROOM_KEYS = {
 
 # FunShops categories with fleet-wide published prices. (Specialty dining is
 # left out: without a booking the list is every ship's cooking classes.)
-SHOP_CATEGORIES = [("drink-packages", "beverage"), ("internet-plans", "internet")]
-
-MAX_EXCURSIONS_PER_PORT = 24  # one page of Carnival's results
+# Specialty-dining venue → words the ship's page uses for it (Carnival's dining shop
+# lists every ship's venues, with duplicate codes per ship class).
+CARNIVAL_KITCHEN = ["carnival kitchen"]
+DINING_VENUES = [
+    (r"steakhouse", ["steakhouse"]),
+    (r"teppanyaki", ["teppanyaki"]),
+    (r"seagrill", ["seagrill"]),
+    (r"ji ji|jiji", ["jiji", "ji ji"]),
+    (r"chefs table", ["chef's table", "chefs table", "chef s table"]),
+    (r"cucina del capitano", ["cucina del capitano"]),
+    (r"il viaggio", ["il viaggio"]),
+    (r"thing 1", ["seuss", "green eggs"]),
+    (r"emeril", ["emeril"]),
+    (r"class|workshop|academy", CARNIVAL_KITCHEN),
+]
+# Excel-class ships, which have Carnival Kitchen (their ship pages don't name it).
+EXCEL_SHIPS = {"MD", "CB", "JB"}
 
 
 def ship_code_for(ship: str) -> Optional[str]:
@@ -294,9 +309,18 @@ class CarnivalProvider:
         research.itinerary = self.map_days(schedule, req.sail_date)
 
         booking_url = self.base_url + sailing["sailingURL"] if sailing.get("sailingURL") else None
+        addon_warnings: list[str] = []
+        # Add-ons load in the background while the room picker is queried.
+        addon_pool = ThreadPoolExecutor(max_workers=1)
+        addon_future = addon_pool.submit(
+            self.fetch_addons, research.itinerary, schedule, addon_warnings, code, ship_name,
+            itin.get("dur"), itin.get("departurePortCode") or "",
+        )
+        book_sink: dict = {}
         try:
             research.staterooms = self.fetch_staterooms(
-                sailing.get("sailingId"), req.sail_date, itin.get("dur"), code, guests, booking_url or self.base_url
+                sailing.get("sailingId"), req.sail_date, itin.get("dur"), code, guests, booking_url or self.base_url,
+                book_sink,
             )
             if research.staterooms:
                 research.sources.append(booking_url or f"{self.base_url}/booking")
@@ -312,12 +336,22 @@ class CarnivalProvider:
         if not research.staterooms:
             research.staterooms = self.search_rooms(sailing, booking_url or f"{self.base_url}/cruise-search")
 
-        research.addons = self.fetch_addons(research.itinerary, schedule, warnings)
-        if research.addons:
+        try:
+            addons = addon_future.result()
+        except Exception as exc:  # fetch_addons shouldn't raise, but never let add-ons fail research
+            log.exception("Carnival add-ons failed")
+            addons = []
+            addon_warnings.append(f"Carnival add-ons could not be loaded: {exc}")
+        finally:
+            addon_pool.shutdown(wait=False)
+        warnings.extend(addon_warnings)
+        extras = self.booking_addons(book_sink.get("first"), itin.get("dur"), booking_url or self.base_url)
+        research.addons = extras + addons
+        if addons:
             research.sources.append(f"{self.base_url}/shop (FunShops)")
             warnings.append(
-                "Carnival add-on prices are published 'from' prices, not quoted for this sailing; "
-                "drink packages exclude Carnival's service charge."
+                "Carnival add-on prices (drinks, Wi-Fi, dining, spa, excursions) are its published 'from' prices, "
+                "not quoted for this sailing; service charges are included where Carnival adds them."
             )
         return research
 
@@ -429,11 +463,14 @@ class CarnivalProvider:
             "previousCabinSelectedRateCode": None,
         }
 
-    def fetch_staterooms(self, sailing_id, sail_date, dur_days, ship_code, guests, source) -> list[Stateroom]:
+    def fetch_staterooms(self, sailing_id, sail_date, dur_days, ship_code, guests, source,
+                         sink: Optional[dict] = None) -> list[Stateroom]:
         if not sailing_id:
             raise ProviderError("sailing has no id")
         first = self._json("POST", "/booking-api/api/v1.0/book",
                            self.book_body(sailing_id, sail_date, dur_days, ship_code, guests, None))
+        if sink is not None:
+            sink["first"] = first
         cabin = (first.get("cabins") or [{}])[0]
         metas = (cabin.get("options") or {}).get("metas") or []
         if not metas:
@@ -671,90 +708,336 @@ class CarnivalProvider:
         )
 
     # ── Add-ons ──────────────────────────────────────────────────────────
+    #
+    # Carnival's FunShops (/shop/plp/search/<category>) only prices for a sailing
+    # once a booking is attached, so without one these are Carnival's published
+    # "from" prices. Where the shop can be narrowed we do: spa passes by ship
+    # (spaShip facet), Faster to the Fun by embarkation port, excursions by port.
+    # Specialty dining has no ship filter, so it is matched against the venues the
+    # ship's own page lists. Gratuities and Vacation Protection come from the
+    # booking API for this exact sailing.
 
-    def _shop(self, slug: str) -> Optional[dict]:
+    def _shop(self, slug: str, q: Optional[str] = None, page: int = 0) -> Optional[dict]:
+        path = f"/shop/plp/search/{slug}"
+        params = []
+        if q or page:  # Carnival ignores `page` without a query
+            params.append("q=" + (q or ":recommended"))  # facet query values come pre-encoded
+        if page:
+            params.append(f"page={page}")
+        if params:
+            path += "?" + "&".join(params)
         try:
-            data = self._json("GET", f"/shop/plp/search/{slug}")
+            data = self._json("GET", path, attempts=2)
         except ProviderError as exc:
-            log.info("Carnival shop %s: %s", slug, exc)
+            log.info("Carnival shop %s: %s", path, exc)
             return None
         return data if isinstance(data, dict) else None
 
-    def fetch_addons(self, days: list[ItineraryDay], schedule: list[dict], warnings: list[str]) -> list[AddOn]:
-        addons: list[AddOn] = []
-        failed = []
-        for slug, kind in SHOP_CATEGORIES:
-            data = self._shop(slug)
-            if data is None:
-                failed.append(slug.replace("-", " "))
-                continue
-            results = (data.get("productCategorySearchPageData") or {}).get("results") or []
-            addons.extend(self.map_products(results, kind))
+    @staticmethod
+    def _results(data: Optional[dict]) -> list[dict]:
+        return ((data or {}).get("productCategorySearchPageData") or {}).get("results") or []
 
-        # Shore excursions: one FunShops category per port (skip embark/debark and sea days).
-        missing_ports = []
+    def _shop_all(self, slug: str, q: Optional[str] = None, max_pages: int = 3) -> Optional[list[dict]]:
+        first = self._shop(slug, q)
+        if first is None:
+            return None
+        results = list(self._results(first))
+        pages = (((first.get("productCategorySearchPageData") or {}).get("pagination") or {})
+                 .get("numberOfPages") or 1)
+        for page in range(1, min(pages, max_pages)):
+            results.extend(self._results(self._shop(slug, q, page)))
+        return results
+
+    def fetch_addons(self, days: list[ItineraryDay], schedule: list[dict], warnings: list[str],
+                     ship_code: str = "", ship_name: str = "", nights: Optional[int] = None,
+                     embark_code: str = "") -> list[AddOn]:
+        """Everything Carnival sells for this sailing. Never raises: failures become warnings."""
+        ports = []
         seen = set()
         for i, stop in enumerate(schedule):
-            if i == 0 or i == len(schedule) - 1 or is_sea_day(stop):
-                continue
             pcode = (stop.get("portCode") or "").upper()
-            if pcode in seen:
+            if i == 0 or i == len(schedule) - 1 or is_sea_day(stop) or pcode in seen:
                 continue
             seen.add(pcode)
-            port_name = re.sub(r"[™®]", "", stop.get("port") or "").strip()
-            found = self.fetch_port_excursions(port_name, pcode)
-            if found is None:
-                missing_ports.append(port_name)
-            else:
-                addons.extend(found)
+            ports.append((re.sub(r"[™®]", "", stop.get("port") or "").strip(), pcode))
+
+        jobs = {
+            "drink packages": lambda: self._shop_all("drink-packages"),
+            "in-room drinks": lambda: self._shop_all("in-room-beverages", max_pages=4),
+            "Wi-Fi plans": lambda: self._shop_all("internet-plans"),
+            "specialty dining": lambda: self._shop_all("reserve-dining"),
+            "ship page": lambda: self.ship_page_text(ship_name),
+            "spa passes": lambda: self._shop_all("relaxation-areas", f":price-asc:spaShip:{ship_code}"),
+            "photo packages": lambda: self._shop_all("dream-studio"),
+            "arcade": lambda: self._shop_all("entertainment-packages"),
+            "Faster to the Fun": lambda: (self._shop_all("faster-to-the-fun", f":recommended:category:{embark_code}")
+                                          if embark_code else []),
+            "port list": lambda: self.excursion_port_facets(),
+        }
+        out: dict[str, object] = {}
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            futures = {k: pool.submit(fn) for k, fn in jobs.items()}
+            for k, fut in futures.items():
+                try:
+                    out[k] = fut.result()
+                except Exception as exc:  # an add-on must never fail research
+                    log.warning("Carnival add-on %s failed: %s", k, exc)
+                    out[k] = None
+
+            facets = out.get("port list") or []
+            port_futs = [(name, code, pool.submit(self.fetch_port_excursions, name, code, facets))
+                         for name, code in ports]
+            excursions: list[AddOn] = []
+            missing_ports = []
+            for name, code, fut in port_futs:
+                try:
+                    found = fut.result()
+                except Exception as exc:
+                    log.warning("Carnival excursions for %s failed: %s", name, exc)
+                    found = None
+                if found is None:
+                    missing_ports.append(name)
+                else:
+                    excursions.extend(found)
+
+        failed = [k for k in ("drink packages", "Wi-Fi plans", "specialty dining", "spa passes")
+                  if out.get(k) is None]
+        addons: list[AddOn] = []
+        addons += self.map_products(out.get("drink packages") or [], "beverage")
+        addons += self.map_products(out.get("in-room drinks") or [], "beverage", default_unit="flat",
+                                    default_label="each, delivered to the stateroom")
+        addons += self.map_products(out.get("Wi-Fi plans") or [], "internet")
+        ship_text = out.get("ship page")
+        dining = self.filter_dining(out.get("specialty dining") or [], ship_code, ship_text)
+        addons += self.map_products(dining, "dining", default_unit="per_person", default_label="per person")
+        if out.get("specialty dining") and not ship_text:
+            warnings.append("Couldn't read the ship's page, so the specialty dining list is Carnival's whole "
+                            "fleet (deduplicated) — check which venues this ship has.")
+        addons += self.map_products(self.pick_spa_passes(out.get("spa passes") or [], nights), "activity",
+                                    default_unit="per_person", default_label="per guest")
+        addons += self.map_products(out.get("photo packages") or [], "photo", default_unit="flat",
+                                    default_label="per package")
+        addons += self.map_products(out.get("arcade") or [], "activity", default_unit="flat",
+                                    default_label="per package")
+        addons += self.map_products(out.get("Faster to the Fun") or [], "other", default_unit="flat",
+                                    default_label="per stateroom")
+        addons += excursions
         if failed:
             warnings.append(f"Couldn't load Carnival add-ons for: {', '.join(failed)}.")
         if missing_ports:
             warnings.append(f"No Carnival shore excursions found online for: {', '.join(missing_ports)}.")
         return addons
 
-    def fetch_port_excursions(self, port_name: str, port_code: str) -> Optional[list[AddOn]]:
-        for slug in port_slugs(port_name):
-            data = self._shop(slug)
-            if not data:
-                continue
-            results = (data.get("productCategorySearchPageData") or {}).get("results") or []
-            # Only trust a slug whose results really are this port's.
-            codes = {((r.get("shoreExData") or {}).get("portData") or {}).get("code") for r in results}
-            if results and (data.get("categoryName") == port_code or port_code in codes):
-                return self.map_excursions(results[:MAX_EXCURSIONS_PER_PORT], port_name)
-        return None
+    # Ship page → which specialty restaurants this ship has.
+
+    def ship_page_text(self, ship_name: str) -> Optional[str]:
+        if not ship_name:
+            return None
+        slug = re.sub(r"[^a-z0-9]+", "-", ship_name.lower()).strip("-")
+        url = f"{self.base_url}/cruise-ships/{slug}"
+        if self._blocked:  # carnival.com refuses this server: render the page in Cloudflare's browser
+            try:
+                page = self.cf.content({"url": url, "gotoOptions": {"waitUntil": "domcontentloaded", "timeout": 30000}})
+            except (BrowserRenderingError, AttributeError):
+                return None
+        else:
+            try:
+                resp = self.http.get(url, headers={"user-agent": USER_AGENT})
+                with self._lock:
+                    self.http_calls += 1
+                if resp.status_code != 200:
+                    return None
+                page = resp.text
+            except httpx.HTTPError:
+                return None
+        soup = BeautifulSoup(page, "html.parser")
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+        text = re.sub(r"\s+", " ", soup.get_text(" ")).replace("’", "'").replace("&#39;", "'").lower()
+        return text if len(text) > 200 else None
 
     @staticmethod
-    def map_products(results: list[dict], kind: str) -> list[AddOn]:
-        out = []
+    def dining_key(name: str) -> str:
+        return re.sub(r"[^a-z0-9]+", " ", name.lower().replace("’", "'").replace("'", "")).strip()
+
+    @staticmethod
+    def filter_dining(results: list[dict], ship_code: str, ship_text: Optional[str]) -> list[dict]:
+        """Deduplicate Carnival's fleet-wide dining list and keep what this ship has."""
+        by_key: dict[str, dict] = {}
         for r in results:
-            price = (r.get("price") or {}).get("value")
-            if price is None:
+            if (r.get("price") or {}).get("value") is None:
                 continue
+            key = CarnivalProvider.dining_key(r.get("name") or "")
+            if key and (key not in by_key or r["price"]["value"] < by_key[key]["price"]["value"]):
+                by_key[key] = r
+        if not ship_text:
+            return list(by_key.values())
+        out = []
+        for key, r in by_key.items():
+            needs = None
+            for pattern, keywords in DINING_VENUES:
+                if re.search(pattern, key):
+                    needs = keywords
+                    break
+            if needs is None:  # unknown venue: keep it only if the ship's page names it
+                needs = [key]
+            if any(k in ship_text for k in needs) or (needs is CARNIVAL_KITCHEN and ship_code in EXCEL_SHIPS):
+                out.append(r)
+        return out
+
+    @staticmethod
+    def pick_spa_passes(results: list[dict], nights: Optional[int]) -> list[dict]:
+        """Thermal-suite passes for this ship: the one for this cruise length plus day/couples passes."""
+        def days(name: str):
+            m = re.search(r"(\d+)\s*-\s*(\d+)\s*-?\s*day", name, re.I)
+            if m:
+                return int(m.group(1)), int(m.group(2))
+            m = re.search(r"(\d+)\s*-?\s*day", name, re.I)
+            return (int(m.group(1)), int(m.group(1))) if m else None
+
+        cruise = [r for r in results if "cruise" in (r.get("name") or "").lower() and days(r.get("name") or "")]
+        other = [r for r in results if r not in cruise]
+        if nights:
+            match = [r for r in cruise if days(r["name"])[0] <= nights <= days(r["name"])[1]]
+            if match:
+                return match + other
+        return results
+
+    # Shore excursions: Carnival's shore-excursion catalogue lists every port it sells
+    # tours in ("Ports & Destination" facet); pick this port's entry, confirm by port code.
+
+    def excursion_port_facets(self) -> list[tuple[str, str]]:
+        data = self._shop("shoreex")
+        facets = ((data or {}).get("productCategorySearchPageData") or {}).get("facets") or []
+        for f in facets:
+            if f.get("name") == "Ports & Destination":
+                return [(v.get("name") or "", ((v.get("query") or {}).get("query") or {}).get("value") or "")
+                        for v in f.get("values") or []]
+        return []
+
+    @staticmethod
+    def _tokens(name: str) -> set[str]:
+        norm = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+        norm = re.sub(r"[™®]", "", norm)
+        return {t for t in re.split(r"[^a-z0-9]+", norm) if t and t not in {"the", "of", "de", "del"}}
+
+    @staticmethod
+    def rank_port_facets(port_name: str, facets: list[tuple[str, str]]) -> list[str]:
+        """Facet queries most likely to be `port_name`, best first."""
+        want = CarnivalProvider._tokens(port_name)
+        first = CarnivalProvider._tokens(port_name.split(",")[0].split("(")[0])
+        scored = []
+        for name, query in facets:
+            have = CarnivalProvider._tokens(name)
+            if not query or not (first & have):
+                continue
+            score = len(want & have) / len(want | have) + (1 if first <= have else 0)
+            scored.append((score, query))
+        return [q for _, q in sorted(scored, key=lambda x: -x[0])[:3]]
+
+    def fetch_port_excursions(self, port_name: str, port_code: str,
+                              facets: Optional[list[tuple[str, str]]] = None) -> Optional[list[AddOn]]:
+        def ok(results):
+            codes = {((r.get("shoreExData") or {}).get("portData") or {}).get("code") for r in results}
+            return bool(results) and port_code in codes
+
+        for query in self.rank_port_facets(port_name, facets or []):
+            results = self._shop_all("shoreex", query)
+            if results and ok(results):
+                return self.map_excursions(
+                    [r for r in results if ((r.get("shoreExData") or {}).get("portData") or {}).get("code")
+                     in (port_code, None)], port_name)
+        for slug in port_slugs(port_name):  # fallback: the port's own category slug
+            data = self._shop(slug)
+            results = self._results(data)
+            if results and ((data or {}).get("categoryName") == port_code or ok(results)):
+                return self.map_excursions(results, port_name)
+        return None
+
+    # Booking-API extras for this exact sailing.
+
+    @staticmethod
+    def booking_addons(resp: Optional[dict], nights: Optional[int], source: str) -> list[AddOn]:
+        guests = ((resp or {}).get("cabins") or [{}])[0].get("guestPrices") or []
+        g = guests[0] if guests and isinstance(guests[0], dict) else {}
+        out = []
+        if g.get("gratuity"):
+            total = float(g["gratuity"])
+            per_day = round(total / nights, 2) if nights else None
+            out.append(AddOn(
+                kind="other",
+                name="Gratuities (prepaid)",
+                price=per_day if per_day is not None else total,
+                price_unit="per_person_per_day" if per_day is not None else "per_person",
+                unit_label="per person, per day" if per_day is not None else "per person, per cruise",
+                port=None,
+                description=f"${total:,.2f} per person for this {nights}-night sailing, from Carnival's booking "
+                            "system (standard staterooms; suites are charged more). Added to onboard accounts "
+                            "if not prepaid.",
+                source=source,
+            ))
+        if g.get("insurance"):
+            out.append(AddOn(
+                kind="other",
+                name="Vacation Protection",
+                price=float(g["insurance"]),
+                price_unit="per_person",
+                unit_label="per person",
+                port=None,
+                description="Carnival's Vacation Protection plan as quoted by its booking system for this sailing "
+                            "(varies with the fare).",
+                source=source,
+            ))
+        return out
+
+    @staticmethod
+    def fee_percent(r: dict) -> float:
+        f = r.get("feesData") or {}
+        pcts = []
+        if f.get("subjectToGratuity", True) and f.get("gratuityAmount"):
+            pcts.append(float(f["gratuityAmount"]))
+        if f.get("subjectToServiceFee", True) and f.get("serviceFee"):
+            pcts.append(float(f["serviceFee"]))
+        return max(pcts) if pcts else 0.0
+
+    @staticmethod
+    def map_products(results: list[dict], kind: str, default_unit: str = "flat",
+                     default_label: Optional[str] = None) -> list[AddOn]:
+        out = []
+        seen = set()
+        for r in results:
+            base = (r.get("price") or {}).get("value")
+            if base is None or r.get("code") in seen:
+                continue
+            seen.add(r.get("code"))
             fs = r.get("funShopData") or {}
             label = fs.get("salesPerUnitDescription") or None
             if label is None:
-                unit = "flat"
+                unit, label = default_unit, default_label
             elif "up to" in label.lower() and "device" in label.lower():
                 unit = "per_device_per_day"  # e.g. multi-device plan, priced per day for up to 4 devices
             else:
                 unit = unit_from_label(label)
-            desc = _strip_html(r.get("summary")) or None
-            if desc and desc.lower() == (r.get("name") or "").lower():
-                desc = None
+            notes = []
+            summary = _strip_html(r.get("summary"))
+            if summary and summary.lower() != (r.get("name") or "").lower():
+                notes.append(summary[:200])
             if kind == "beverage" and fs.get("childSalesPerUnitDescription"):
-                desc = f"Adult price; child pricing also available ({fs['childSalesPerUnitDescription']})."
-            if kind == "beverage":
-                desc = ((desc + " ") if desc else "") + "Before Carnival's service charge (typically 20%)."
+                notes.append(f"Adult price; child pricing also available ({fs['childSalesPerUnitDescription']}).")
+            pct = CarnivalProvider.fee_percent(r)
+            price = float(base)
+            if pct:
+                price = round(base * (1 + pct / 100), 2)
+                notes.append(f"Price includes Carnival's {pct:g}% service charge (${base:,.2f} before it).")
+            notes.append("Carnival's published 'from' price; the exact price shows once booked.")
             out.append(AddOn(
                 kind=kind,
-                name=r.get("name") or r.get("code") or "",
-                price=float(price),
+                name=(r.get("name") or r.get("code") or "").strip(),
+                price=price,
                 price_unit=unit,
                 unit_label=label,
                 port=None,
-                description=desc,
+                description=" ".join(notes),
                 source=BASE_URL + (r.get("url") or "/shop"),
             ))
         return out

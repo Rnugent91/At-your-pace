@@ -1,0 +1,24 @@
+{
+ "categoryName": null,
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "102043",
+    "name": "Faster To The Fun!",
+    "url": "/faster-to-the-fun/PCV/faster-to-the-fun-102043",
+    "summary": "MAXIMIZE YOUR VACATION FUN WITH CARNIVAL’S FASTER TO FUN PACKAGE. This upgrade package saves you time and hassle, which means its full steam ahead to the fun.",
+    "price": {
+     "value": 79.95
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    }
+   }
+  ],
+  "pagination": {
+   "numberOfPages": 1
+  },
+  "facets": []
+ }
+}

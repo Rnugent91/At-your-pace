@@ -1,0 +1,50 @@
+{
+ "categoryName": null,
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "1096580",
+    "name": "Thermal Suite 5-Day Cruise Pass",
+    "url": "/spa/relaxation-areas/thermal-suite-5-day-cruise-pass-1096580",
+    "summary": "An immersive thermal experience. Unwind in an oasis of heated chambers~ featuring warm and cool temperatures to cleanse and recharge the body. Elements of mist~",
+    "price": {
+     "value": 123.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    }
+   },
+   {
+    "code": "1096582",
+    "name": "Thermal Suite Pass 7-Day Cruise",
+    "url": "/spa/relaxation-areas/thermal-suite-pass-7-day-cruise-1096582",
+    "summary": "An immersive thermal experience.  Unwind in an oasis of heated chambers~ featuring warm and cool temperatures to cleanse and recharge the body. Elements of mist",
+    "price": {
+     "value": 170.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    }
+   },
+   {
+    "code": "1096581",
+    "name": "Thermal Suite 6-Day Cruise Pass",
+    "url": "/spa/relaxation-areas/thermal-suite-6-day-cruise-pass-1096581",
+    "summary": "An immersive thermal experience. Unwind in an oasis of heated chambers~ featuring warm and cool temperatures to cleanse and recharge the body. Elements of mist~",
+    "price": {
+     "value": 170.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": null
+    }
+   }
+  ],
+  "pagination": {
+   "numberOfPages": 1
+  },
+  "facets": []
+ }
+}

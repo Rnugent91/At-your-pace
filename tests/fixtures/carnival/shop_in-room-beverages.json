@@ -1,0 +1,49 @@
+{
+ "categoryName": null,
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "SP4",
+    "name": "Small Water Package - 12 Pack",
+    "url": "/in-room-food-beverages/water/small-water-package--12-pack-SP4",
+    "summary": "<p>12-pk of&nbsp;Natural Spring Water (16.9 fluid oz. bottle)</p> <br /> <span style=\"color: #d0021b;\"><b>Please Note:</b> Bottled water is non-refundable. You ",
+    "price": {
+     "value": 15.95
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": ""
+    },
+    "feesData": {
+     "subjectToGratuity": false,
+     "gratuityAmount": 0.0,
+     "subjectToServiceFee": true,
+     "serviceFee": 20.0
+    }
+   },
+   {
+    "code": "22E",
+    "name": "Santa Helena Chardonnay",
+    "url": "/in-room-food-beverages/wine-champagne/santa-helena-chardonnay-22E",
+    "summary": "<p><br /> </p> <p>Wine vintages are subject to change. </p>",
+    "price": {
+     "value": 32.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": ""
+    },
+    "feesData": {
+     "subjectToGratuity": false,
+     "gratuityAmount": 0.0,
+     "subjectToServiceFee": true,
+     "serviceFee": 20.0
+    }
+   }
+  ],
+  "pagination": {
+   "numberOfPages": 1
+  },
+  "facets": []
+ }
+}

@@ -1,0 +1,56 @@
+{
+ "categoryName": "Shore Excursions",
+ "productCategorySearchPageData": {
+  "results": [],
+  "pagination": {
+   "numberOfPages": 1
+  },
+  "facets": [
+   {
+    "name": "Ports & Destination",
+    "values": [
+     {
+      "name": "Amber Cove, Dominican Republic",
+      "query": {
+       "query": {
+        "value": ":featured:port:Amber+Cove%2C+Dominican+Republic"
+       }
+      }
+     },
+     {
+      "name": "Isla Tropicale, Roatan",
+      "query": {
+       "query": {
+        "value": ":featured:port:Isla+Tropicale%2C+Roatan"
+       }
+      }
+     },
+     {
+      "name": "Grand Turk",
+      "query": {
+       "query": {
+        "value": ":featured:port:Grand+Turk"
+       }
+      }
+     },
+     {
+      "name": "Nassau, The Bahamas",
+      "query": {
+       "query": {
+        "value": ":featured:port:Nassau%2C+The+Bahamas"
+       }
+      }
+     },
+     {
+      "name": "Relaxaway, Half Moon Cay",
+      "query": {
+       "query": {
+        "value": ":featured:port:Relaxaway%2C+Half+Moon+Cay"
+       }
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

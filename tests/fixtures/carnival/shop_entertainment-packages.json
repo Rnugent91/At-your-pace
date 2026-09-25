@@ -1,0 +1,24 @@
+{
+ "categoryName": null,
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "AC2",
+    "name": "Arcade Power-Up Package",
+    "url": "/entertainment-packages/arcade-power-up-package-AC2",
+    "summary": "Arcade Power-Up Package",
+    "price": {
+     "value": 20.0
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": ""
+    }
+   }
+  ],
+  "pagination": {
+   "numberOfPages": 1
+  },
+  "facets": []
+ }
+}

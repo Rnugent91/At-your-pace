@@ -20,10 +20,22 @@ def load(name):
     return json.loads((FIX / name).read_text())
 
 
-def make_transport(calls, book_fail=("OB",)):
+def make_transport(calls, book_fail=("OB",), shop_down=False):
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(request)
         path = request.url.path
+        q = request.url.params.get("q") or ""
+        if shop_down and (path.startswith("/shop/") or path.startswith("/cruise-ships/")):
+            return httpx.Response(503)
+        if path == "/cruise-ships/carnival-vista":
+            return httpx.Response(200, text=(FIX / "ship_carnival-vista.html").read_text())
+        if path == "/shop/plp/search/shoreex" and q:
+            name = "shop_amber-cove.json" if "Amber" in q else "shop_relaxaway.json" if "Relaxaway" in q else None
+            return httpx.Response(200, json=load(name) if name else {"productCategorySearchPageData": None})
+        if path == "/shop/plp/search/relaxation-areas" and "spaShip:VS" not in q:
+            return httpx.Response(200, json={"productCategorySearchPageData": {"results": []}})
+        if path == "/shop/plp/search/faster-to-the-fun" and "category:PCV" not in q:
+            return httpx.Response(200, json={"productCategorySearchPageData": {"results": []}})
         if path == "/cruisesearch/api/search":
             return httpx.Response(200, json=load("search.json"))
         if path == "/cruisesearch/api/search/itinerary":
@@ -115,8 +127,9 @@ def test_research_end_to_end():
 
     add = {(a.kind, a.name): a for a in r.addons}
     cheers = add[("beverage", "CHEERS!")]
-    assert cheers.price == 69.95 and cheers.price_unit == "per_person_per_day"
-    assert "service charge" in cheers.description
+    # Carnival's $69.95 + its 20% service charge, which Carnival always adds.
+    assert cheers.price == 83.94 and cheers.price_unit == "per_person_per_day"
+    assert "20% service charge ($69.95 before it)" in cheers.description
     assert add[("beverage", "Cruise the Vineyard Premium Wine Package")].price_unit == "flat"
     assert add[("internet", "Premium Wi-Fi Plan")].price == 25.5
     assert add[("internet", "Multi-Device Premium Wi-Fi Plan - Up to 4 Devices")].price_unit == "per_device_per_day"
@@ -171,6 +184,8 @@ class FakeCF(CloudflareBrowser):
 
     def content(self, payload, attempts=3):
         self.calls.append(payload)
+        if "addScriptTag" not in payload:  # a plain page render (the ship's page)
+            return (FIX / "ship_carnival-vista.html").read_text()
         script = payload["addScriptTag"][0]["content"]
         path = json.loads(script.split("fetch(", 1)[1].split(",", 1)[0])
         u = urlparse(path)
@@ -196,7 +211,10 @@ def test_blocked_server_ip_uses_cloudflare_browser():
     p = CarnivalProvider(cf=cf, http=httpx.Client(transport=httpx.MockTransport(blocked)))
     r = p.research(REQ)
     assert len(direct) == 1  # after the first 403 everything goes through the browser
-    assert cf.calls and all("#qp-carnival" == c["waitForSelector"]["selector"] for c in cf.calls)
+    fetches = [c for c in cf.calls if "addScriptTag" in c]
+    assert fetches and all(c["waitForSelector"]["selector"] == "#qp-carnival" for c in fetches)
+    # The ship's page (for the dining filter) is rendered in the browser too.
+    assert any(c["url"].endswith("/cruise-ships/carnival-vista") for c in cf.calls if "addScriptTag" not in c)
     book_script = next(c for c in cf.calls if "/booking-api/" in c["addScriptTag"][0]["content"])
     assert '"method": "POST"' in book_script["addScriptTag"][0]["content"]
     assert r.itinerary and r.staterooms
@@ -301,3 +319,60 @@ def test_iter_catalog_per_sailing_and_tax_failure():
     assert r.prices["Interior"] == 606
     with pytest.raises(ValueError):
         next(p.iter_catalog(taxes="bogus"))
+
+
+def test_research_addons_complete():
+    r = provider([]).research(REQ)
+    by_kind = {}
+    for a in r.addons:
+        by_kind.setdefault(a.kind, []).append(a)
+    names = {(a.kind, a.name): a for a in r.addons}
+
+    # Sailing-specific extras from the booking API: $102 gratuities over 6 nights, Vacation Protection $79.
+    grat = names[("other", "Gratuities (prepaid)")]
+    assert grat.price == 17.0 and grat.price_unit == "per_person_per_day" and "$102.00" in grat.description
+    assert names[("other", "Vacation Protection")].price == 79 and names[("other", "Vacation Protection")].price_unit == "per_person"
+
+    # Specialty dining: fleet list deduplicated (SV0/CKPASTA are the same class) and filtered to
+    # the venues Carnival Vista's page lists; Carnival Kitchen is only on Excel-class ships.
+    dining = {a.name: a for a in by_kind["dining"]}
+    assert set(dining) == {"Steakhouse", "Ji Ji Asian Kitchen", "The Chef's Table", "Cucina del Capitano"}
+    assert dining["Steakhouse"].price == 62.4 and dining["Steakhouse"].price_unit == "per_person"
+
+    # Thermal suite: only the pass for this 6-night cruise (from Carnival Vista's spa list).
+    spa = [a for a in by_kind["activity"] if "Thermal" in a.name]
+    assert [a.name for a in spa] == ["Thermal Suite 6-Day Cruise Pass"] and spa[0].price == 170
+    assert names[("activity", "Arcade Power-Up Package")].price_unit == "flat"
+    assert by_kind["photo"][0].name.startswith("Dreams Studio")
+    fttf = names[("other", "Faster To The Fun!")]
+    assert fttf.price == 79.95 and fttf.unit_label == "per stateroom"
+
+    # In-stateroom drinks carry Carnival's 20% delivery/service fee.
+    water = names[("beverage", "Small Water Package - 12 Pack")]
+    assert water.price == round(15.95 * 1.2, 2) and water.price_unit == "flat"
+
+    # Excursions via Carnival's port list (Amber Cove, RelaxAway) — Celebration Key isn't in it
+    # and its slug answers with another port's tours, so it's reported missing.
+    ports = {a.port for a in by_kind["excursion"]}
+    assert ports == {"Amber Cove", "RelaxAway, Half Moon Cay"}
+    assert any("Celebration Key" in w for w in r.warnings)
+
+
+def test_rank_port_facets_and_spa_passes():
+    facets = [("Isla Tropicale, Roatan", "q1"), ("Nassau, The Bahamas", "q2"), ("Cozumel, Mexico", "q3")]
+    assert CarnivalProvider.rank_port_facets("Isla Tropicale, Roatan", facets)[0] == "q1"
+    assert CarnivalProvider.rank_port_facets("Nassau", facets) == ["q2"]
+    assert CarnivalProvider.rank_port_facets("Málaga", facets) == []
+    passes = [{"name": "Thermal Suite 14-20 Day Cruise Pass"}, {"name": "Thermal Suite Pass 7-Day Cruise"},
+              {"name": "Thermal Suite Day Pass"}]
+    assert [p["name"] for p in CarnivalProvider.pick_spa_passes(passes, 16)] == [
+        "Thermal Suite 14-20 Day Cruise Pass", "Thermal Suite Day Pass"]
+    assert len(CarnivalProvider.pick_spa_passes(passes, 3)) == 3  # no exact match: show them all
+
+
+def test_addon_failures_never_fail_research():
+    r = provider([], shop_down=True).research(REQ)
+    assert r.staterooms and r.itinerary
+    # Only the booking-API extras remain; the shop failures are reported.
+    assert {a.name for a in r.addons} == {"Gratuities (prepaid)", "Vacation Protection"}
+    assert any("Couldn't load Carnival add-ons" in w for w in r.warnings)
