@@ -1,0 +1,286 @@
+{
+ "results": {
+  "itineraries": [
+   {
+    "code": "CEF",
+    "shipCode": "VS",
+    "shipName": "Carnival Vista",
+    "dur": 6,
+    "departurePortCode": "PCV",
+    "departurePortName": "Port Canaveral (Orlando), FL",
+    "itineraryTitleFormatted": "6-Day Eastern Caribbean from Port Canaveral (Orlando), FL",
+    "leadSailing": {
+     "departureDate": "2027-03-14T00:00:00.000Z",
+     "schedule": [
+      {
+       "day": 1,
+       "date": "2027-03-14T00:00:00+00:00",
+       "portCode": "PCV",
+       "port": "Port Canaveral (Orlando)",
+       "arrive": null,
+       "depart": "2027-03-14T15:30:00+00:00"
+      },
+      {
+       "day": 2,
+       "date": "2027-03-15T00:00:00+00:00",
+       "portCode": "FS1",
+       "port": "Fun Day At Sea",
+       "arrive": null,
+       "depart": null
+      },
+      {
+       "day": 3,
+       "date": "2027-03-16T00:00:00+00:00",
+       "portCode": "DOP",
+       "port": "Amber Cove",
+       "arrive": "2027-03-16T10:30:00+00:00",
+       "depart": "2027-03-16T18:30:00+00:00"
+      },
+      {
+       "day": 4,
+       "date": "2027-03-17T00:00:00+00:00",
+       "portCode": "FS1",
+       "port": "Fun Day At Sea",
+       "arrive": null,
+       "depart": null
+      },
+      {
+       "day": 5,
+       "date": "2027-03-18T00:00:00+00:00",
+       "portCode": "HMD",
+       "port": "RelaxAway, Half Moon Cay™",
+       "arrive": "2027-03-18T07:00:00+00:00",
+       "depart": "2027-03-18T16:30:00+00:00"
+      },
+      {
+       "day": 6,
+       "date": "2027-03-19T00:00:00+00:00",
+       "portCode": "CBK",
+       "port": "Celebration Key™",
+       "arrive": "2027-03-19T08:00:00+00:00",
+       "depart": "2027-03-19T16:00:00+00:00"
+      },
+      {
+       "day": 7,
+       "date": "2027-03-20T00:00:00+00:00",
+       "portCode": "PCV",
+       "port": "Port Canaveral (Orlando)",
+       "arrive": "2027-03-20T08:00:00+00:00",
+       "depart": null
+      }
+     ]
+    },
+    "sailings": [
+     {
+      "departureDate": "2027-03-14T00:00:00.000Z",
+      "arrivalDate": "2027-03-20T00:00:00.000Z",
+      "sailingId": "22184",
+      "sailingURL": "/booking?embkCode=PCV&itinCode=CEF&durDays=6&shipCode=VS&subRegionCode=CE&sailingID=22184&sailDate=03142027&numGuests=2&isMilitary=N&isOver55=N&isPastGuest=N&stateCode=&couponCode=&evsel=&locality=1&currency=USD",
+      "rooms": {
+       "interior": {
+        "metacode": "IS",
+        "price": 531,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "O7O",
+        "categoryCode": "1A"
+       },
+       "oceanview": {
+        "metacode": "OS",
+        "price": 732,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PSV",
+        "categoryCode": "OV"
+       },
+       "balcony": {
+        "metacode": "OB",
+        "price": 882,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PSV",
+        "categoryCode": "BL"
+       },
+       "suite": {
+        "metacode": "SU",
+        "price": 1697,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "O7O",
+        "categoryCode": "SS"
+       }
+      }
+     },
+     {
+      "departureDate": "2027-03-28T00:00:00.000Z",
+      "arrivalDate": "2027-04-03T00:00:00.000Z",
+      "sailingId": "22186",
+      "sailingURL": "/booking?embkCode=PCV&itinCode=CEF&durDays=6&shipCode=VS&subRegionCode=CE&sailingID=22186&sailDate=03282027&numGuests=2&isMilitary=N&isOver55=N&isPastGuest=N&stateCode=&couponCode=&evsel=&locality=1&currency=USD",
+      "rooms": {
+       "interior": {
+        "metacode": "IS",
+        "price": 606,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "O7O",
+        "categoryCode": "1A"
+       },
+       "oceanview": {
+        "metacode": "OS",
+        "price": 827,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PSV",
+        "categoryCode": "OV"
+       },
+       "balcony": {
+        "metacode": "OB",
+        "price": 977,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PSV",
+        "categoryCode": "BL"
+       },
+       "suite": {
+        "metacode": "SU",
+        "price": 1611,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "O7O",
+        "categoryCode": "OS"
+       }
+      }
+     }
+    ]
+   },
+   {
+    "code": "CS9",
+    "shipCode": "VS",
+    "shipName": "Carnival Vista",
+    "dur": 8,
+    "departurePortCode": "PCV",
+    "departurePortName": "Port Canaveral (Orlando), FL",
+    "itineraryTitleFormatted": "8-Day Southern Caribbean from Port Canaveral (Orlando), FL",
+    "leadSailing": {
+     "departureDate": "2027-03-06T00:00:00.000Z",
+     "schedule": []
+    },
+    "sailings": [
+     {
+      "departureDate": "2027-03-06T00:00:00.000Z",
+      "arrivalDate": "2027-03-14T00:00:00.000Z",
+      "sailingId": "22183",
+      "sailingURL": "/booking?embkCode=PCV&itinCode=CS9&durDays=8&shipCode=VS&subRegionCode=CS&sailingID=22183&sailDate=03062027&numGuests=2&isMilitary=N&isOver55=N&isPastGuest=N&stateCode=&couponCode=&evsel=CARNIVAL55&locality=1&currency=USD",
+      "rooms": {
+       "interior": {
+        "metacode": "IS",
+        "price": 876,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "O7O",
+        "categoryCode": "1A"
+       },
+       "oceanview": {
+        "metacode": "OS",
+        "price": 1146,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PSV",
+        "categoryCode": "OV"
+       },
+       "balcony": {
+        "metacode": "OB",
+        "price": 1501,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PSV",
+        "categoryCode": "BL"
+       },
+       "suite": {
+        "metacode": "SU",
+        "price": 3027,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PB4",
+        "categoryCode": "SS"
+       }
+      }
+     }
+    ]
+   },
+   {
+    "code": "CEG",
+    "shipCode": "VS",
+    "shipName": "Carnival Vista",
+    "dur": 8,
+    "departurePortCode": "PCV",
+    "departurePortName": "Port Canaveral (Orlando), FL",
+    "itineraryTitleFormatted": "8-Day Eastern Caribbean from Port Canaveral (Orlando), FL",
+    "leadSailing": {
+     "departureDate": "2027-03-20T00:00:00.000Z",
+     "schedule": []
+    },
+    "sailings": [
+     {
+      "departureDate": "2027-03-20T00:00:00.000Z",
+      "arrivalDate": "2027-03-28T00:00:00.000Z",
+      "sailingId": "22185",
+      "sailingURL": "/booking?embkCode=PCV&itinCode=CEG&durDays=8&shipCode=VS&subRegionCode=CE&sailingID=22185&sailDate=03202027&numGuests=2&isMilitary=N&isOver55=N&isPastGuest=N&stateCode=&couponCode=&evsel=&locality=1&currency=USD",
+      "rooms": {
+       "interior": {
+        "metacode": "IS",
+        "price": 894,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "O7O",
+        "categoryCode": "1A"
+       },
+       "oceanview": {
+        "metacode": "OS",
+        "price": 1155,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PSV",
+        "categoryCode": "OV"
+       },
+       "balcony": {
+        "metacode": "OB",
+        "price": 1485,
+        "priceCurrency": "USD",
+        "taxesAndFees": 0.0,
+        "soldOut": false,
+        "rateCode": "PSV",
+        "categoryCode": "BL"
+       },
+       "suite": {
+        "metacode": "SU",
+        "price": 0,
+        "priceCurrency": null,
+        "taxesAndFees": null,
+        "soldOut": true,
+        "rateCode": "",
+        "categoryCode": null
+       }
+      }
+     }
+    ]
+   }
+  ],
+  "totalResults": 3,
+  "lastPage": 1
+ }
+}

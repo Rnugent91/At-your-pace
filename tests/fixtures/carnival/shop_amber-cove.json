@@ -1,0 +1,51 @@
+{
+ "categoryName": "DOP",
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "445037",
+    "name": "Dolphin Swim & Ocean World Day Pass",
+    "url": "/shore-excursions/amber-cove/dolphin-swim--ocean-world-day-pass-445037",
+    "price": {
+     "value": 169.99
+    },
+    "shoreExData": {
+     "durationAmount": 5.0,
+     "durationType": "H",
+     "activityLevel": {
+      "name": "Easy"
+     },
+     "portData": {
+      "code": "DOP",
+      "name": "Amber Cove, Dominican Republic"
+     },
+     "childBasePriceData": {
+      "value": 145.99
+     }
+    }
+   },
+   {
+    "code": "445015",
+    "name": "Coconut Cove: All Inclusive Cliffside Beach Oasis",
+    "url": "/shore-excursions/amber-cove/coconut-cove-all-inclusive-cliffside-beach-oasis-445015",
+    "price": {
+     "value": 98.99
+    },
+    "shoreExData": {
+     "durationAmount": 4.5,
+     "durationType": "H",
+     "activityLevel": {
+      "name": "Easy"
+     },
+     "portData": {
+      "code": "DOP",
+      "name": "Amber Cove, Dominican Republic"
+     },
+     "childBasePriceData": {
+      "value": 70.99
+     }
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,93 @@
+{
+ "taxesAndFeesIncludedInPrice": false,
+ "taxesAndFeesPerPerson": 85.77,
+ "sailingCurrency": "USD",
+ "cabins": [
+  {
+   "selections": {
+    "meta": {
+     "code": "OS"
+    }
+   },
+   "options": {
+    "metas": [
+     {
+      "code": "SU",
+      "name": "Suite",
+      "price": 1611,
+      "isSoldOut": false,
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     },
+     {
+      "code": "OB",
+      "name": "Balcony",
+      "price": 977,
+      "isSoldOut": false,
+      "rate": {
+       "name": "SUPER SAVER",
+       "code": "PSV"
+      }
+     },
+     {
+      "code": "OS",
+      "name": "Ocean View",
+      "price": 827,
+      "isSoldOut": false,
+      "rate": {
+       "name": "SUPER SAVER",
+       "code": "PSV"
+      }
+     },
+     {
+      "code": "IS",
+      "name": "Interior",
+      "price": 606,
+      "isSoldOut": false,
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     }
+    ],
+    "stateroomTypes": [
+     {
+      "code": "VSOS",
+      "name": "Ocean View",
+      "price": 827,
+      "isGtee": true,
+      "metaCode": "OS",
+      "rate": {
+       "name": "SUPER SAVER",
+       "code": "PSV"
+      }
+     },
+     {
+      "code": "VSOSST",
+      "name": "Ocean View",
+      "price": 846,
+      "isGtee": false,
+      "metaCode": "OS",
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     },
+     {
+      "code": "VSOSSTS",
+      "name": "Ocean View (Obstructed View)",
+      "price": 847,
+      "isGtee": false,
+      "metaCode": "OS",
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

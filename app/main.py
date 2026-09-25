@@ -24,6 +24,7 @@ from .models import AddOnSelection, Quote
 from .pricing import compute_totals, default_quantity, price_changes, snapshot
 from .providers import CRUISE_LINES, ClaudeResearchProvider, ResearchRequest, run_research
 from .providers.claude_research import draft_client_intro
+from .providers.carnival import CarnivalProvider
 from .providers.celebrity import CelebrityProvider
 from .providers.royal_caribbean import RoyalCaribbeanProvider
 from .providers.viking import VikingProvider
@@ -74,7 +75,7 @@ def create_app(
     claude = ClaudeResearchProvider(claude_client, settings.model)
     if direct_providers is None:
         cf = CloudflareBrowser(settings.cf_account_id, settings.cf_api_token)
-        direct_providers = [RoyalCaribbeanProvider(cf, settings.rccl_graphql_url), CelebrityProvider(cf), VikingProvider(cf)]
+        direct_providers = [RoyalCaribbeanProvider(cf, settings.rccl_graphql_url), CelebrityProvider(cf), VikingProvider(cf), CarnivalProvider(cf)]
 
     @app.middleware("http")
     async def same_origin_posts(request: Request, call_next):

@@ -1,0 +1,93 @@
+{
+ "taxesAndFeesIncludedInPrice": false,
+ "taxesAndFeesPerPerson": 85.77,
+ "sailingCurrency": "USD",
+ "cabins": [
+  {
+   "selections": {
+    "meta": {
+     "code": "IS"
+    }
+   },
+   "options": {
+    "metas": [
+     {
+      "code": "SU",
+      "name": "Suite",
+      "price": 1611,
+      "isSoldOut": false,
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     },
+     {
+      "code": "OB",
+      "name": "Balcony",
+      "price": 977,
+      "isSoldOut": false,
+      "rate": {
+       "name": "SUPER SAVER",
+       "code": "PSV"
+      }
+     },
+     {
+      "code": "OS",
+      "name": "Ocean View",
+      "price": 827,
+      "isSoldOut": false,
+      "rate": {
+       "name": "SUPER SAVER",
+       "code": "PSV"
+      }
+     },
+     {
+      "code": "IS",
+      "name": "Interior",
+      "price": 606,
+      "isSoldOut": false,
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     }
+    ],
+    "stateroomTypes": [
+     {
+      "code": "VSULUL",
+      "name": "Interior Upper/Lower",
+      "price": 606,
+      "isGtee": false,
+      "metaCode": "IS",
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     },
+     {
+      "code": "VSULULP",
+      "name": "Interior Upper/Lower (Porthole)",
+      "price": 606,
+      "isGtee": false,
+      "metaCode": "IS",
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     },
+     {
+      "code": "VSIS",
+      "name": "Interior",
+      "price": 637,
+      "isGtee": true,
+      "metaCode": "IS",
+      "rate": {
+       "name": "SUPER SAVER",
+       "code": "PSV"
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

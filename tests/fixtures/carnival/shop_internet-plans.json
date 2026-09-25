@@ -1,0 +1,63 @@
+{
+ "categoryName": "Internet Plans",
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "SRA",
+    "name": "Social Wi-Fi Plan",
+    "url": "/internet-plans/social-wi-fi-plan-SRA",
+    "summary": "<p>Social Wi-Fi Plan</p>",
+    "price": {
+     "value": 20.4,
+     "formattedValue": "$20.40"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": "person per day",
+     "childSalesPerUnitDescription": ""
+    }
+   },
+   {
+    "code": "SRB",
+    "name": "Value Wi-Fi Plan",
+    "url": "/internet-plans/value-wi-fi-plan-SRB",
+    "summary": "<p>Value Wi-Fi Plan</p>",
+    "price": {
+     "value": 23.8,
+     "formattedValue": "$23.80"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": "person per day",
+     "childSalesPerUnitDescription": ""
+    }
+   },
+   {
+    "code": "MB5",
+    "name": "Multi-Device Premium Wi-Fi Plan - Up to 4 Devices",
+    "url": "/internet-plans/multi-device-premium-wi-fi-plan--up-to-4-devices-MB5",
+    "summary": null,
+    "price": {
+     "value": 90.0,
+     "formattedValue": "$90.00"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": "per day up to 4 devices",
+     "childSalesPerUnitDescription": ""
+    }
+   },
+   {
+    "code": "SRC",
+    "name": "Premium Wi-Fi Plan",
+    "url": "/internet-plans/premium-wi-fi-plan-SRC",
+    "summary": "<p>Premium Wi-Fi Plan</p>",
+    "price": {
+     "value": 25.5,
+     "formattedValue": "$25.50"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": "person per day",
+     "childSalesPerUnitDescription": ""
+    }
+   }
+  ]
+ }
+}

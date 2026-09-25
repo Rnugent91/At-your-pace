@@ -1,0 +1,93 @@
+{
+ "taxesAndFeesIncludedInPrice": false,
+ "taxesAndFeesPerPerson": 85.77,
+ "sailingCurrency": "USD",
+ "cabins": [
+  {
+   "selections": {
+    "meta": {
+     "code": "SU"
+    }
+   },
+   "options": {
+    "metas": [
+     {
+      "code": "SU",
+      "name": "Suite",
+      "price": 1611,
+      "isSoldOut": false,
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     },
+     {
+      "code": "OB",
+      "name": "Balcony",
+      "price": 977,
+      "isSoldOut": false,
+      "rate": {
+       "name": "SUPER SAVER",
+       "code": "PSV"
+      }
+     },
+     {
+      "code": "OS",
+      "name": "Ocean View",
+      "price": 827,
+      "isSoldOut": false,
+      "rate": {
+       "name": "SUPER SAVER",
+       "code": "PSV"
+      }
+     },
+     {
+      "code": "IS",
+      "name": "Interior",
+      "price": 606,
+      "isSoldOut": false,
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     }
+    ],
+    "stateroomTypes": [
+     {
+      "code": "VSSUSUL",
+      "name": "Ocean Suite",
+      "price": 1611,
+      "isGtee": false,
+      "metaCode": "SU",
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     },
+     {
+      "code": "VSSUSPO",
+      "name": "Cloud 9 Spa Suite (Obstructed View)",
+      "price": 2009,
+      "isGtee": false,
+      "metaCode": "SU",
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     },
+     {
+      "code": "VSSUSPL",
+      "name": "Cloud 9 Spa Suite",
+      "price": 2009,
+      "isGtee": false,
+      "metaCode": "SU",
+      "rate": {
+       "name": "MORE TIME MORE PERKS SALE GRAND FINALE",
+       "code": "O7O"
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

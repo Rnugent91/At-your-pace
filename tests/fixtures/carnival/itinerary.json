@@ -1,0 +1,68 @@
+{
+ "itineraries": [
+  {
+   "code": "CEF",
+   "leadSailing": {
+    "departureDate": "2027-03-28T00:00:00.000Z",
+    "schedule": [
+     {
+      "day": 1,
+      "date": "2027-03-28T00:00:00+00:00",
+      "portCode": "PCV",
+      "port": "Port Canaveral (Orlando)",
+      "arrive": null,
+      "depart": "2027-03-28T15:30:00+00:00"
+     },
+     {
+      "day": 2,
+      "date": "2027-03-29T00:00:00+00:00",
+      "portCode": "FS1",
+      "port": "Fun Day At Sea",
+      "arrive": null,
+      "depart": null
+     },
+     {
+      "day": 3,
+      "date": "2027-03-30T00:00:00+00:00",
+      "portCode": "DOP",
+      "port": "Amber Cove",
+      "arrive": "2027-03-30T10:30:00+00:00",
+      "depart": "2027-03-30T18:30:00+00:00"
+     },
+     {
+      "day": 4,
+      "date": "2027-03-31T00:00:00+00:00",
+      "portCode": "FS1",
+      "port": "Fun Day At Sea",
+      "arrive": null,
+      "depart": null
+     },
+     {
+      "day": 5,
+      "date": "2027-04-01T00:00:00+00:00",
+      "portCode": "HMD",
+      "port": "RelaxAway, Half Moon Cay™",
+      "arrive": "2027-04-01T07:00:00+00:00",
+      "depart": "2027-04-01T16:30:00+00:00"
+     },
+     {
+      "day": 6,
+      "date": "2027-04-02T00:00:00+00:00",
+      "portCode": "CBK",
+      "port": "Celebration Key™",
+      "arrive": "2027-04-02T08:00:00+00:00",
+      "depart": "2027-04-02T16:00:00+00:00"
+     },
+     {
+      "day": 7,
+      "date": "2027-04-03T00:00:00+00:00",
+      "portCode": "PCV",
+      "port": "Port Canaveral (Orlando)",
+      "arrive": "2027-04-03T08:00:00+00:00",
+      "depart": null
+     }
+    ]
+   }
+  }
+ ]
+}

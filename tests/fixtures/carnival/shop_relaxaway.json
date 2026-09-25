@@ -1,0 +1,51 @@
+{
+ "categoryName": "HMD",
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "447026",
+    "name": "Stand Up Paddle Board Rental",
+    "url": "/shore-excursions/relaxaway/stand-up-paddle-board-rental-447026",
+    "price": {
+     "value": 39.99
+    },
+    "shoreExData": {
+     "durationAmount": 1.0,
+     "durationType": "H",
+     "activityLevel": {
+      "name": "Moderate"
+     },
+     "portData": {
+      "code": "HMD",
+      "name": "Relaxaway, Half Moon Cay"
+     },
+     "childBasePriceData": {
+      "value": 39.99
+     }
+    }
+   },
+   {
+    "code": "447033",
+    "name": "Stand-Up Pedal-Powered Board Rental",
+    "url": "/shore-excursions/relaxaway/stand-up-pedal-powered-board-rental-447033",
+    "price": {
+     "value": 39.99
+    },
+    "shoreExData": {
+     "durationAmount": 1.0,
+     "durationType": "H",
+     "activityLevel": {
+      "name": "Moderate"
+     },
+     "portData": {
+      "code": "HMD",
+      "name": "Relaxaway, Half Moon Cay"
+     },
+     "childBasePriceData": {
+      "value": 39.99
+     }
+    }
+   }
+  ]
+ }
+}

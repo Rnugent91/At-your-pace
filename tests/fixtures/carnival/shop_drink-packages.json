@@ -1,0 +1,77 @@
+{
+ "categoryName": "Drink Packages",
+ "productCategorySearchPageData": {
+  "results": [
+   {
+    "code": "SUM",
+    "name": "CHEERS!",
+    "url": "/drink-packages/cheers-package/cheers-SUM",
+    "summary": null,
+    "price": {
+     "value": 69.95,
+     "formattedValue": "$69.95"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": "Person per Day",
+     "childSalesPerUnitDescription": ""
+    }
+   },
+   {
+    "code": "WIE_1",
+    "name": "Cruise the Vineyard Premium Wine Package",
+    "url": "/drink-packages/premium-cruise-vineyard-wine-packages/cruise-the-vineyard-premium-wine-package-WIE_1",
+    "summary": null,
+    "price": {
+     "value": 124.0,
+     "formattedValue": "$124.00"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": ""
+    }
+   },
+   {
+    "code": "BB_1",
+    "name": "Bottomless Bubbles",
+    "url": "/drink-packages/bottomless-bubbles-package/bottomless-bubbles-BB_1",
+    "summary": null,
+    "price": {
+     "value": 11.99,
+     "formattedValue": "$11.99"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": "Adult Per Day",
+     "childSalesPerUnitDescription": "Child Per Day"
+    }
+   },
+   {
+    "code": "WIN_1",
+    "name": "Cruise the Vineyard Wine Package",
+    "url": "/drink-packages/cruise-vineyard-wine-package/cruise-the-vineyard-wine-package-WIN_1",
+    "summary": null,
+    "price": {
+     "value": 81.0,
+     "formattedValue": "$81.00"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": null,
+     "childSalesPerUnitDescription": ""
+    }
+   },
+   {
+    "code": "ZPR",
+    "name": "Cheers! Zero Proof",
+    "url": "/drink-packages/non-alcoholic-package/cheers-zero-proof-ZPR",
+    "summary": null,
+    "price": {
+     "value": 29.99,
+     "formattedValue": "$29.99"
+    },
+    "funShopData": {
+     "salesPerUnitDescription": "Person per Day",
+     "childSalesPerUnitDescription": ""
+    }
+   }
+  ]
+ }
+}
