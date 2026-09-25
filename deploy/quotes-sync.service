@@ -1,0 +1,18 @@
+# /etc/systemd/system/quotes-sync.service — run by quotes-sync.timer
+[Unit]
+Description=At Your Pace: daily cruise catalog sync (every sailing, every line)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+WorkingDirectory=/var/www/quotes
+EnvironmentFile=/etc/quotes.env
+Environment=DATA_DIR=/var/lib/quotes
+# Lead-in fares for every sailing of every line, then room types for watched sailings.
+# To also re-price every room type on every sailing (uses Cloudflare for Royal Caribbean;
+# fine on the paid plan), append e.g.:  --all-rooms all --room-workers 10
+ExecStart=/var/www/quotes/.venv/bin/python -m app.sync
+TimeoutStartSec=6h
+Nice=10

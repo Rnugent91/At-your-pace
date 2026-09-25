@@ -1,0 +1,11 @@
+# /etc/systemd/system/quotes-sync.timer
+[Unit]
+Description=Run the cruise catalog sync every morning
+
+[Timer]
+OnCalendar=*-*-* 05:17:00
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

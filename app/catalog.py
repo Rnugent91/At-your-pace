@@ -291,6 +291,18 @@ class CatalogStore:
         order = {"Interior": 0, "Ocean View": 1, "Balcony": 2, "Suite": 3}
         return sorted(by_room.values(), key=lambda r: (order.get(r["category"], 4), r["price"] is None, r["price"] or 0))
 
+    def active_sailings(self, line: str, date_from: str = "", date_to: str = "") -> list[dict]:
+        """Future, still-listed sailings of a line (for full room-type refreshes)."""
+        where, args = ["line = ?", "active = 1", "sail_date >= ?"], [line, date_from or date.today().isoformat()]
+        if date_to:
+            where.append("sail_date <= ?"); args.append(date_to)
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT line, sailing_key, sail_date FROM sailings WHERE " + " AND ".join(where) + " ORDER BY sail_date",
+                args,
+            ).fetchall()
+        return [dict(r) for r in rows]
+
     def room_classes(self) -> list[str]:
         standard = ["Interior", "Ocean View", "Balcony", "Suite"]
         with self._connect() as conn:

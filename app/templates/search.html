@@ -72,7 +72,8 @@
       {% else %}<span class="sold">—</span>{% endif %}
     </td>
     {% endfor %}
-    <td><a class="btn ghost" href="/quotes/new?cruise_line={{ s.line | urlencode }}&ship={{ s.ship | urlencode }}&sail_date={{ s.sail_date }}&booking_url={{ (s.booking_url or '') | urlencode }}">Quote</a></td>
+    <td style="white-space:nowrap"><a class="small" href="/sailings/{{ s.line | urlencode }}/{{ s.sailing_key | urlencode }}#rooms">Room types</a><br>
+      <a class="btn ghost" href="/quotes/new?cruise_line={{ s.line | urlencode }}&ship={{ s.ship | urlencode }}&sail_date={{ s.sail_date }}&booking_url={{ (s.booking_url or '') | urlencode }}">Quote</a></td>
   </tr>
   {% endfor %}
   </tbody>

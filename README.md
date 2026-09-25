@@ -1,6 +1,25 @@
 # At Your Pace — Quote Builder
 
-A private web app for building personalised cruise quotes, powered by Claude.
+A private web app for searching every cruise sailing, tracking prices, and building personalised cruise quotes, powered by Claude.
+
+## Search every sailing
+
+**Search sailings** (`/search`) holds every bookable sailing of every line with a live integration, refreshed daily. Filter by line, ship, port or region, dates, nights, room class and price, and sort by price, price per night, or recent price changes. Each sailing shows its price history. **Watch** a sailing to re-price each of its individual room types every day, or press **Check room prices now**. **Quote** opens a pre-filled new quote.
+
+The daily sync (`python -m app.sync`, run by `deploy/quotes-sync.timer`) pulls each line's whole catalog from its own search API: lead-in fare per room class for every sailing. A price is recorded only when it changes, so the history stays small. A line that fails doesn't stop the others; the search page shows each line's last sync.
+
+| Line | Catalog (every sailing) | Individual room types | Cloudflare needed? |
+|---|---|---|---|
+| Royal Caribbean | ~3,200 sailings, ~10 s | Room-selection pages via Cloudflare | Room types only |
+| Celebrity | ~2,000 sailings, ~5 s | Celebrity's rooms API (one call per sailing) | No (fallback only) |
+| Viking (ocean, river, expedition) | ~9,900 sailings, ~40 s | Dates & Pricing API | No (fallback only) |
+| MSC | ~6,900 sailings, ~17 s | Per category code, cruise-only and with Drinks & Wi-Fi | No (fallback only) |
+| Virgin Voyages | ~420 sailings, ~2 min | Cabin categories API | No (fallback only) |
+| Carnival | in progress | Booking API | No (fallback only) |
+
+Timings are from a datacenter server. "Fallback only" means the provider switches to Cloudflare Browser Rendering automatically if the line starts blocking direct requests.
+
+To re-price every room type on every sailing daily (not just watched ones), add `--all-rooms all --room-workers 10` to the sync command. That is the main Cloudflare cost: Royal Caribbean's room types take one or more browser renders per sailing, which the paid plan covers comfortably.
 
 1. Enter the client, cruise line, ship and sail date (e.g. *Royal Caribbean · Utopia of the Seas · Oct 26*).
 2. The app pulls every stateroom price, the itinerary, and the add-on packages (drinks, Wi-Fi, dining, shore excursions…).
@@ -72,6 +91,9 @@ chmod 600 /etc/quotes.env
 
 # 4. Service + nginx + HTTPS
 cp deploy/quotes.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now quotes
+cp deploy/quotes-sync.service deploy/quotes-sync.timer /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now quotes-sync.timer   # daily catalog sync
+systemctl start quotes-sync                                           # first sync now
 cp deploy/nginx-quotes.conf /etc/nginx/sites-available/quotes
 ln -s /etc/nginx/sites-available/quotes /etc/nginx/sites-enabled/ && nginx -t && systemctl reload nginx
 certbot --nginx -d quotes.quackport.com
@@ -86,7 +108,9 @@ app/
   main.py              web routes (FastAPI)
   providers/           one module per cruise line + Claude research fallback
   pricing.py           quote totals and price-change tracking
+  catalog.py           master sailing catalog + price history (SQLite)
+  sync.py              daily catalog sync (python -m app.sync)
   pdf.py               PDF rendering (headless Chromium)
   templates/           advisor screens + pdf_quote.html (the client-facing quote)
-deploy/                systemd unit and nginx site for the subdomain
+deploy/                systemd units (app + daily sync timer) and nginx site
 ```

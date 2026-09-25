@@ -144,3 +144,14 @@ def test_search_and_sailing_pages(tmp_path):
 
     prefilled = client.get("/quotes/new?cruise_line=Viking&ship=Viking+Mira&sail_date=2026-10-14").text
     assert 'value="Viking Mira"' in prefilled and 'value="2026-10-14"' in prefilled
+
+
+def test_refresh_every_room_type_of_a_line(tmp_path):
+    from app.sync import refresh_line_rooms
+
+    store = CatalogStore(tmp_path)
+    store.upsert("Royal Caribbean", [sailing("A"), sailing("B", LATER)])
+    line = FakeLine([], [room("Ocean View Balcony", "Balcony", 700.0, "4D"), room("Infinite Balcony", "Balcony", 720.0, "4N")])
+    assert refresh_line_rooms(store, [line], "Royal Caribbean", workers=2) == (2, 4, 0)
+    assert refresh_line_rooms(store, [line], "Royal Caribbean", date_to=SOON) == (1, 0, 0)
+    assert {r["room"] for r in store.latest_rooms("Royal Caribbean", "B")} == {"Ocean View Balcony (4D)", "Infinite Balcony (4N)"}

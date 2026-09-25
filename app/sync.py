@@ -5,6 +5,9 @@ Run by the quotes-sync systemd timer (deploy/quotes-sync.timer), or by hand:
     python -m app.sync                      # all lines, then watched sailings' room types
     python -m app.sync --line Carnival      # one line
     python -m app.sync --rooms-only         # just refresh watched sailings' room types
+    python -m app.sync --all-rooms "Royal Caribbean" --room-workers 10
+                                            # every room type of every sailing of a line
+                                            # (uses Cloudflare for lines that need it — paid plan)
 """
 
 import argparse
@@ -97,11 +100,37 @@ def refresh_watched(store: CatalogStore, providers: list, workers: int = 4) -> i
     return changed
 
 
+def refresh_line_rooms(store: CatalogStore, providers: list, line: str, workers: int = 8,
+                       date_to: str = "") -> tuple[int, int, int]:
+    """Room-type prices for every future sailing of a line. Returns (sailings, rooms changed, failures)."""
+    sailings = store.active_sailings(line, date_to=date_to)
+
+    def one(s: dict) -> tuple[int, int]:
+        try:
+            return refresh_rooms(store, providers, line, s["sailing_key"]), 0
+        except Exception as exc:
+            log.warning("Rooms failed for %s %s: %s", line, s["sailing_key"], exc)
+            return 0, 1
+
+    changed = failed = 0
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+        for i, (c, f) in enumerate(pool.map(one, sailings), 1):
+            changed, failed = changed + c, failed + f
+            if i % 100 == 0:
+                log.info("%s rooms: %d/%d sailings, %d changes, %d failed", line, i, len(sailings), changed, failed)
+    log.info("%s rooms: %d sailings, %d room prices changed, %d failed", line, len(sailings), changed, failed)
+    return len(sailings), changed, failed
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--line", help="Only this cruise line (e.g. 'Carnival')")
     ap.add_argument("--rooms-only", action="store_true", help="Only refresh watched sailings' room types")
     ap.add_argument("--no-rooms", action="store_true", help="Skip the watched sailings' room-type refresh")
+    ap.add_argument("--all-rooms", action="append", default=[], metavar="LINE",
+                    help="Also re-price every room type on every sailing of LINE (repeatable, or 'all')")
+    ap.add_argument("--room-workers", type=int, default=8, help="Sailings priced at once for --all-rooms")
+    ap.add_argument("--rooms-until", default="", help="Only sailings up to this date for --all-rooms (YYYY-MM-DD)")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -113,6 +142,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         failed = any(r.error for r in sync_catalog(store, providers, args.line))
     if not args.no_rooms:
         refresh_watched(store, providers)
+    lines = [p.cruise_line for p in catalog_providers(providers)]
+    for line in args.all_rooms:
+        for name in (lines if line.lower() == "all" else [line]):
+            refresh_line_rooms(store, providers, name, args.room_workers, args.rooms_until)
     return 1 if failed else 0
 
 
