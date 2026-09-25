@@ -10,6 +10,7 @@ Ported from Quackport (DuckPassport.Web):
 import json
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 from urllib.parse import unquote
 
@@ -67,6 +68,28 @@ CABIN_CLASSES = {
     "DELUXE": "Suite",
 }
 
+CLASS_NAMES = {
+    "INTERIOR": "Interior",
+    "OUTSIDE": "Ocean View",
+    "BALCONY": "Balcony",
+    "DELUXE": "Suite",
+}
+
+SEARCH_URL = "https://www.royalcaribbean.com/cruises/graph"
+SEARCH_HEADERS = {
+    "accept": "application/json",
+    "content-type": "application/json",
+    "appkey": APP_KEY,
+    "country": "USA",
+    "currency": "USD",
+    "language": "en",
+    "office": "MIA",
+    "countryalpha2code": "US",
+    "origin": "https://www.royalcaribbean.com",
+    "referer": "https://www.royalcaribbean.com/cruises",
+    "user-agent": USER_AGENT,
+}
+
 # products GraphQL categories → our add-on kind
 ADDON_CATEGORIES = [
     ("beverage", "beverage", False),
@@ -84,7 +107,15 @@ query cruiseSearch_Cruises($filters: String, $sort: CruiseSearchSort, $paginatio
     results {
       cruises {
         id
-        sailings { id sailDate startDate endDate }
+        sailings {
+          id sailDate startDate endDate
+          taxesAndFees { value }
+          taxesAndFeesIncluded
+          stateroomClassPricing {
+            price { value originalAmount taxesAndFeesAmount areTaxesAndFeesIncluded }
+            stateroomClass { id name }
+          }
+        }
         masterSailing { itinerary {
           name code totalNights sailingNights type
           ship { code name }
@@ -191,7 +222,7 @@ class RoyalCaribbeanProvider:
         if not code:
             raise ProviderError(f"Unknown Royal Caribbean ship '{req.ship}' — enter its two-letter RC code")
 
-        cruises = self.search_sailings(code)
+        cruises = self.search_sailings(code, req.sail_date)
         found = self.pick_sailing(cruises, req.sail_date)
         if not found:
             raise ProviderError(f"No Royal Caribbean sailing found for ship {code} on {req.sail_date}")
@@ -218,15 +249,25 @@ class RoyalCaribbeanProvider:
         warnings = research.warnings  # pydantic copies lists passed in, so append to the model's own
 
         package_code = sailing["id"].split("_")[0] if "_" in sailing.get("id", "") else itin.get("code", "")
-        try:
-            research.staterooms = self.fetch_staterooms(
-                code, req.sail_date, cruise.get("id", ""), package_code, req.adults, req.children, warnings
-            )
-            if research.staterooms:
+        class_rows = self.search_class_fares(sailing)
+        detail: dict[str, list[Stateroom]] = {}
+        if self.cf.configured:
+            try:
+                detail = self.fetch_room_types(
+                    code, req.sail_date, cruise.get("id", ""), package_code, req.adults, req.children
+                )
+            except Exception:  # keep the class fares, itinerary and add-ons even if rooms fail
+                log.exception("RC room-type fetch failed")
+            if detail:
                 research.sources.append("royalcaribbean.com room selection")
-        except Exception as exc:  # keep the itinerary and add-ons even if rooms fail
-            log.exception("RC stateroom fetch failed")
-            warnings.append(f"Stateroom prices could not be loaded from Royal Caribbean: {exc}")
+        else:
+            warnings.append(
+                "Per-room-type prices need Cloudflare Browser Rendering (RC blocks server requests to its "
+                "room pages). Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN."
+            )
+        research.staterooms = self.merge_rooms(class_rows, detail, warnings)
+        if class_rows and (req.adults != 2 or req.children):
+            warnings.append("Room-class fares from the cruise search are for 2 adults sharing; verify for this party size.")
 
         research.addons = self.fetch_addons(code, req.sail_date, warnings)
         if research.addons:
@@ -235,38 +276,30 @@ class RoyalCaribbeanProvider:
 
     # ── Sailing lookup ───────────────────────────────────────────────────
 
-    def search_sailings(self, ship_code: str) -> list[dict]:
+    def search_sailings(self, ship_code: str, sail_date: str = "") -> list[dict]:
+        filters = f"ship:{ship_code}" + (f"|startDate:{sail_date}~{sail_date}" if sail_date else "")
         payload = {
             "operationName": "cruiseSearch_Cruises",
             "variables": {
-                "filters": f"ship:{ship_code}",
+                "filters": filters,
                 "sort": {"by": "RECOMMENDED", "order": "ASC"},
                 "pagination": {"count": 200, "skip": 0},
             },
             "query": CRUISE_SEARCH_QUERY,
         }
-        if self.cf.configured:
-            raw = self._search_via_browser(ship_code, payload)
-        else:
-            # Direct call — only works from non-datacenter IPs (Akamai 403s servers).
-            try:
-                resp = self.http.post(
-                    "https://www.royalcaribbean.com/cruises/graph",
-                    json=payload,
-                    headers={
-                        "accept": "application/json",
-                        "appkey": APP_KEY,
-                        "origin": "https://www.royalcaribbean.com",
-                        "referer": "https://www.royalcaribbean.com/cruises",
-                        "user-agent": USER_AGENT,
-                    },
-                )
-                resp.raise_for_status()
-            except httpx.HTTPError as exc:
+        # RC's search answers server IPs directly (Sept 2026); fall back to a
+        # Cloudflare-rendered page if Akamai starts blocking it.
+        try:
+            resp = self.http.post(SEARCH_URL, json=payload, headers=SEARCH_HEADERS)
+            resp.raise_for_status()
+            raw = resp.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            if not self.cf.configured:
                 raise ProviderError(
                     f"Royal Caribbean search blocked or failed ({exc}). Set CLOUDFLARE_ACCOUNT_ID/API_TOKEN."
                 ) from exc
-            raw = resp.json()
+            log.warning("RC direct search failed (%s); using Cloudflare", exc)
+            raw = self._search_via_browser(ship_code, payload)
         return (((raw.get("data") or {}).get("cruiseSearch") or {}).get("results") or {}).get("cruises") or []
 
     def _search_via_browser(self, ship_code: str, payload: dict) -> dict:
@@ -350,17 +383,48 @@ class RoyalCaribbeanProvider:
             f"&r0d={cabin_class}&r0D=y&rgVisited=true&r0C=y"
         )
 
-    def fetch_staterooms(self, ship_code, sail_date, group_id, package_code, adults, children, warnings) -> list[Stateroom]:
-        if not self.cf.configured:
-            warnings.append(
-                "Stateroom prices need Cloudflare Browser Rendering (RC blocks server requests). "
-                "Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN."
+    def search_class_fares(self, sailing: dict) -> list[Stateroom]:
+        """One lead-in row per room class from the cruise search's pricing."""
+        sailing_taxes = (sailing.get("taxesAndFees") or {}).get("value")
+        rows = []
+        for entry in sailing.get("stateroomClassPricing") or []:
+            cid = ((entry.get("stateroomClass") or {}).get("id") or "").upper()
+            if cid not in CABIN_CLASSES:
+                continue
+            price = entry.get("price") or {}
+            total = price.get("value")
+            taxes = price.get("taxesAndFeesAmount", sailing_taxes)
+            included = price.get("areTaxesAndFeesIncluded", sailing.get("taxesAndFeesIncluded"))
+            fare = None
+            if total is not None:
+                fare = round(total - taxes, 2) if included and taxes is not None else float(total)
+            notes = "Lead-in fare for the class (lowest available room type), per person, 2 guests sharing."
+            if fare is not None and (price.get("originalAmount") or 0) > total:
+                notes += f" Was ${price['originalAmount']:,.2f} incl. taxes before current savings."
+            rows.append(
+                Stateroom(
+                    category=CABIN_CLASSES[cid],
+                    name=CLASS_NAMES[cid],
+                    code=cid,
+                    price_per_person=fare,
+                    taxes_fees_per_person=taxes if fare is not None else None,
+                    sold_out=total is None,
+                    notes=notes if fare is not None else "Not available on Royal Caribbean's site for this sailing.",
+                    source=SEARCH_URL,
+                )
             )
-            return []
-        rooms: list[Stateroom] = []
-        for cabin_class, category in CABIN_CLASSES.items():
+        return rows
+
+    def fetch_room_types(self, ship_code, sail_date, group_id, package_code, adults, children) -> dict[str, list[Stateroom]]:
+        """Per-room-type fares by cabin class, from room pages rendered through Cloudflare.
+
+        The four classes load in parallel (Cloudflare's paid plan allows many
+        concurrent browsers; on the free plan the client backs off on 429s).
+        """
+
+        def one(cabin_class: str) -> tuple[str, list[Stateroom]]:
+            category = CABIN_CLASSES[cabin_class]
             url = self.room_url(ship_code, sail_date, group_id, package_code, cabin_class, adults, children)
-            found = []
             for try_url in (url, url.replace("/room-selection/room-subtype", "/room-selection/type-and-subtype")):
                 try:
                     html = self.cf.content(
@@ -375,11 +439,30 @@ class RoyalCaribbeanProvider:
                     continue
                 found = self.parse_room_html(html, category, try_url)
                 if found:
-                    break
-            if not found:
+                    return cabin_class, found
+            return cabin_class, []
+
+        with ThreadPoolExecutor(max_workers=len(CABIN_CLASSES)) as pool:
+            return {cls: rooms for cls, rooms in pool.map(one, CABIN_CLASSES) if rooms}
+
+    def merge_rooms(self, class_rows: list[Stateroom], detail: dict[str, list[Stateroom]],
+                    warnings: list[str]) -> list[Stateroom]:
+        """Room types where the room pages loaded, else the class's lead-in fare, in class order."""
+        by_class = {r.code: r for r in class_rows}
+        out: list[Stateroom] = []
+        for cabin_class, category in CABIN_CLASSES.items():
+            row = by_class.get(cabin_class)
+            rooms = detail.get(cabin_class)
+            if rooms:
+                for r in rooms:
+                    if row is not None:
+                        r.taxes_fees_per_person = row.taxes_fees_per_person
+                out.extend(rooms)
+            elif row is not None:
+                out.append(row)
+            else:
                 warnings.append(f"No {category} prices found on Royal Caribbean (sold out or page changed).")
-            rooms.extend(found)
-        return rooms
+        return out
 
     @staticmethod
     def parse_room_html(html: str, category: str, source: str) -> list[Stateroom]:

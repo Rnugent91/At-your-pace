@@ -90,14 +90,35 @@ class FakeCF(CloudflareBrowser):
         return self.room_html if "cabinClassType=BALCONY" in payload["url"] else "<html></html>"
 
 
-def graphql_transport(request: httpx.Request) -> httpx.Response:
+def graphql_transport(request: httpx.Request, search=SEARCH, search_status=200) -> httpx.Response:
+    if request.url.path == "/cruises/graph":
+        body = json.loads(request.content)
+        assert "ship:UT" in body["variables"]["filters"]
+        return httpx.Response(search_status, json=search)
     body = json.loads(request.content)
     return httpx.Response(200, json=gql_products(body["variables"]["category"]))
 
 
-def provider(cf=None):
-    http = httpx.Client(transport=httpx.MockTransport(graphql_transport))
-    return RoyalCaribbeanProvider(cf or FakeCF(), "https://example.test/graphql", http=http)
+def provider(cf=None, search=SEARCH, search_status=200):
+    transport = httpx.MockTransport(lambda r: graphql_transport(r, search, search_status))
+    return RoyalCaribbeanProvider(cf or FakeCF(), "https://example.test/graphql", http=httpx.Client(transport=transport))
+
+
+def with_class_pricing(search):
+    """SEARCH with cruise-search lead-in fares on the real sailing (Interior incl. taxes, Suite sold out)."""
+    s = json.loads(json.dumps(search))
+    sailing = s["data"]["cruiseSearch"]["results"]["cruises"][1]["sailings"][1]
+    sailing["taxesAndFees"] = {"value": 105.36}
+    sailing["stateroomClassPricing"] = [
+        {"stateroomClass": {"id": "INTERIOR", "name": "Interior"},
+         "price": {"value": 670.86, "originalAmount": 1020.36, "taxesAndFeesAmount": 105.36,
+                   "areTaxesAndFeesIncluded": True}},
+        {"stateroomClass": {"id": "BALCONY", "name": "Balcony"},
+         "price": {"value": 667.36, "originalAmount": None, "taxesAndFeesAmount": 105.36,
+                   "areTaxesAndFeesIncluded": True}},
+        {"stateroomClass": {"id": "DELUXE", "name": "Suite"}, "price": None},
+    ]
+    return s
 
 
 def test_ship_codes():
@@ -155,8 +176,37 @@ def test_unknown_ship_and_missing_date_raise():
 
 
 def test_rooms_without_cloudflare_warn_but_keep_addons():
-    p = provider(CloudflareBrowser("", ""))
-    p.search_sailings = lambda code: SEARCH["data"]["cruiseSearch"]["results"]["cruises"]
-    r = p.research(ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
+    r = provider(CloudflareBrowser("", "")).research(ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
     assert r.staterooms == [] and r.addons
     assert any("Cloudflare" in w for w in r.warnings)
+
+
+def test_class_fares_from_search_without_cloudflare():
+    p = provider(CloudflareBrowser("", ""), search=with_class_pricing(SEARCH))
+    r = p.research(ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
+    by_name = {s.name: s for s in r.staterooms}
+    assert list(by_name) == ["Interior", "Balcony", "Suite"]
+    assert by_name["Interior"].price_per_person == 565.5 and by_name["Interior"].taxes_fees_per_person == 105.36
+    assert "Was $1,020.36" in by_name["Interior"].notes
+    assert by_name["Suite"].sold_out and by_name["Suite"].price_per_person is None
+    assert any("Ocean View" in w for w in r.warnings)
+
+
+def test_room_pages_replace_class_rows_and_keep_taxes():
+    cf = FakeCF()
+    r = provider(cf, search=with_class_pricing(SEARCH)).research(
+        ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
+    assert [s.name for s in r.staterooms] == ["Interior", "Ocean View Balcony", "Infinite Balcony", "Suite"]
+    assert r.staterooms[1].taxes_fees_per_person == 105.36
+    assert not any("cruises?search" in c["url"] for c in cf.calls)  # direct search worked; no browser needed
+
+
+def test_blocked_search_falls_back_to_cloudflare():
+    cf = FakeCF()
+    r = provider(cf, search={"error": "denied"}, search_status=403).research(
+        ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
+    assert r.ship == "Utopia of the Seas"
+    assert any("cruises?search" in c["url"] for c in cf.calls)
+    with pytest.raises(ProviderError):
+        provider(CloudflareBrowser("", ""), search={}, search_status=403).research(
+            ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))

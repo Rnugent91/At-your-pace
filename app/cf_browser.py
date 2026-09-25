@@ -47,9 +47,9 @@ class CloudflareBrowser:
                 last = str(exc)
                 time.sleep(attempt)
                 continue
-            if resp.status_code == 429:  # account-wide rate limit
+            if resp.status_code == 429:  # account-wide rate limit (free plan: 1 request / 10s)
                 last = "rate limited (429)"
-                time.sleep(3 * attempt)
+                time.sleep(10 * attempt)
                 continue
             if resp.status_code >= 400:
                 raise BrowserRenderingError(f"HTTP {resp.status_code}: {resp.text[:300]}")
