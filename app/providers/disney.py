@@ -37,7 +37,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from typing import Any, Iterator, Optional
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 import httpx
 from bs4 import BeautifulSoup
@@ -94,6 +94,10 @@ SHIP_NAMES = {code: name.title() for name, code in SHIP_CODES.items()}
 TYPE_CATEGORY = {"INSIDE": "Interior", "OUTSIDE": "Ocean View", "VERANDAH": "Balcony", "SUITE": "Suite"}
 TYPE_ORDER = {"INSIDE": 0, "OUTSIDE": 1, "VERANDAH": 2, "SUITE": 3}
 CHILD_AGE = 8  # age sent for each child when real ages aren't known
+
+TOKEN_PATHS = {"sa": SA + "client-token/", "c101": "/profile-api/authentication/get-client-token/"}
+# Public content "finder" (port adventures, onboard activities); needs the profile-api token.
+C101 = "/dcl-cruise-101-webapi/finder/"
 
 WORKERS = 4
 BROWSER_BATCH = 8  # API calls per rendered page (Cloudflare pages time out at 60s)
@@ -189,6 +193,19 @@ def departure_from_name(product_name: str) -> Optional[str]:
     return m.group(1).strip() if m else None
 
 
+def _auth_kind(call: dict) -> Optional[str]:
+    a = call.get("auth")
+    return "sa" if a is True else (a or None)
+
+
+def port_adventure_list(page: Optional[dict]) -> tuple[Optional[str], Optional[str]]:
+    """(region, port slug) of the Port Adventures list a port-of-call page links to."""
+    if not page:
+        return None, None
+    m = re.search(r"/port-adventures/([a-z-]+)/list/([a-z0-9-]+)/", json.dumps(page))
+    return (m.group(1), m.group(2)) if m else (None, None)
+
+
 def _hhmm(dt: Optional[str]) -> Optional[str]:
     return dt[11:16] if dt and len(dt) >= 16 else None
 
@@ -201,8 +218,7 @@ class DisneyProvider:
         self.cf = cf
         self.http = http or httpx.Client(timeout=60, follow_redirects=True, headers=BROWSER_HEADERS)
         self._use_browser = False
-        self._token: Optional[str] = None
-        self._token_at = 0.0
+        self._tokens: dict[str, tuple[str, float]] = {}  # kind → (token, fetched at)
         self._authz_done = False
         self._lock = threading.Lock()
         self._sleep = time.sleep
@@ -287,6 +303,11 @@ class DisneyProvider:
             warnings.append("Disney shows every stateroom on this sailing as sold out.")
 
         research.addons = self.gratuity_addons(info, url)
+        try:
+            research.addons += self.fetch_addons(info, ship_name, warnings)
+        except Exception as exc:  # add-ons must never fail the research
+            log.warning("Disney add-ons failed: %s", exc)
+            warnings.append(f"Disney Port Adventures and onboard extras could not be loaded: {exc}")
         if req.children:
             warnings.append(
                 f"Child fares assume age {CHILD_AGE}; Disney prices children by age (infants and 3–12s differ) — re-check with real ages.")
@@ -352,6 +373,15 @@ class DisneyProvider:
                 depart=None if sea else _hhmm(by.get("DEPARTURE")),
             ))
 
+        # Ports of call with shore time (not embarkation/debarkation, not sea days), in order.
+        home = {sailing.get("portFrom"), sailing.get("portTo")}
+        port_calls: list[tuple[str, str]] = []
+        for pid in sailing.get("portsOfCall") or []:
+            meta = (res.get("ports") or {}).get(pid) or {}
+            if pid in home or meta.get("seawareCode") == "AT_SEA" or pid in [p for p, _ in port_calls]:
+                continue
+            port_calls.append((pid, ports.get(pid) or _entity(pid)))
+
         subtypes = (ship.get("stateroomSubtypes") or {}).items()
         subtype_names = {_entity(k): v.get("name") for k, v in subtypes}
         always_gty = {_entity(k) for k, v in subtypes if v.get("isAlwaysGuaranteed")}
@@ -364,6 +394,7 @@ class DisneyProvider:
             "nights": sailing.get("numberOfNights"),
             "departure_port": ports.get(sailing.get("portFrom")),
             "itinerary": days,
+            "port_calls": port_calls,
             "subtype_names": subtype_names,
             "always_guaranteed": always_gty,
             "gratuity": gratuity,
@@ -480,6 +511,103 @@ class DisneyProvider:
                 source=source))
         return out
 
+    def fetch_addons(self, info: dict, ship_name: str, warnings: list[str]) -> list[AddOn]:
+        """Port Adventures for this sailing's ports (published prices) and this ship's paid
+        onboard extras (Disney publishes no prices for those; listed with price None)."""
+        port_calls = info.get("port_calls") or []
+        calls = [self._c101_call(C101 + "list-entity/onboard-activities/", keep=False)]
+        calls += [self._c101_call(C101 + "finder-service/details-entity/dcl/"
+                                  + quote(f"{pid};entityType=port-of-call;destination=dcl", safe="")
+                                  + f"/port-of-call/{self._today().isoformat()}/", keep=True)
+                  for pid, _ in port_calls]
+        onboard, *port_pages = self._post_many(calls)
+
+        # Each port page links to its Port Adventures list: /port-adventures/<region>/list/<slug>/
+        wanted: dict[str, list[tuple[str, str]]] = {}  # region → [(slug, port name)]
+        missing = [name for (pid, name), page in zip(port_calls, port_pages) if page is None]
+        for (pid, name), page in zip(port_calls, port_pages):
+            region, pslug = port_adventure_list(page)
+            if region:
+                wanted.setdefault(region, []).append((pslug, name))
+            elif page is not None:  # e.g. scenic cruising (glaciers): no Port Adventures page
+                log.info("Disney: no Port Adventures list for %s", name)
+        regions = list(wanted)
+        lists = self._post_many([self._c101_call(C101 + f"list-entity/port-adventures/{r}/", keep=False)
+                                 for r in regions])
+        out: list[AddOn] = []
+        for region, data in zip(regions, lists):
+            for pslug, name in wanted[region]:
+                found = self.map_port_adventures(data, pslug, name) if data else []
+                out += found
+                if not found:
+                    missing.append(name)
+        if any(a.kind == "excursion" for a in out):
+            warnings.append("Port Adventure prices are Disney's published per-port prices, not specific to this "
+                            "sailing; availability varies — confirm in My Cruise Activities after booking.")
+        if missing:
+            warnings.append("No Disney Port Adventures found for: " + ", ".join(dict.fromkeys(missing)) + ".")
+        if onboard:
+            out += self.map_onboard(onboard, ship_name)
+        else:
+            warnings.append("Disney's onboard activities list could not be loaded.")
+        warnings.append("Disney doesn't publish prices for adult dining, spa, photo packages or Connect@Sea Wi-Fi "
+                        "before booking (and sells no unlimited drink packages); those extras are listed without "
+                        "prices — quote them from My Cruise Activities.")
+        return out
+
+    @staticmethod
+    def map_port_adventures(data: dict, port_slug: str, port_name: str) -> list[AddOn]:
+        out = []
+        for r in data.get("results") or []:
+            fp = r.get("filterParams") or {}
+            if port_slug not in (fp.get("facets") or []):
+                continue
+            bands = [(float(m.group(1).replace(",", "")), m.group(2).strip())
+                     for m in (re.match(r"\$\s*([\d,.]+)\*?\s*\(([^)]*)\)", p or "") for p in fp.get("prices") or [])
+                     if m]
+            adult = next((b for b in bands if "and up" in b[1] or "adult" in b[1].lower()), bands[0] if bands else None)
+            desc = "; ".join(f"{label}: ${price:,.2f}" for price, label in bands)
+            if r.get("isGratuityCharged"):
+                desc += "; gratuity added"
+            name = re.sub(r"\s+", " ", r.get("name") or "").strip()
+            # "Adventure Jeeps ... - Per Jeep (N10A)", "Adventure by ATV - Per 2 person ATV (LPT24)"
+            per = re.search(r"\bper (?:\d+[- ]person )?([a-z]+(?: [a-z]+)?)\s*(?:\(|$)", name, re.I)
+            flat = bool(per) and per.group(1).lower() not in ("person", "guest", "adult")
+            unit = f"per {per.group(1)}" if flat else "per person"
+            out.append(AddOn(
+                kind="excursion",
+                name=name,
+                price=adult[0] if adult else None,
+                price_unit="flat" if flat else "per_person",
+                unit_label=f"{unit} ({adult[1]})" if adult else unit,
+                port=port_name,
+                description=(desc + ". " if desc else "") + "Published Disney Port Adventures price.",
+                source=BASE + (r.get("url") or "/port-adventures/"),
+            ))
+        return sorted(out, key=lambda a: (a.price is None, a.price or 0, a.name))
+
+    @staticmethod
+    def map_onboard(data: dict, ship_name: str) -> list[AddOn]:
+        facet = (ship_name or "").lower().replace("disney", "").strip().split(" ")[-1] + "-ship"
+        kinds = {"RESTAURANT": "dining", "SPA": "activity", "ENTERTAINMENT": "activity"}
+        out = []
+        for r in data.get("results") or []:
+            facets = (r.get("filterParams") or {}).get("facets") or []
+            kind = kinds.get(r.get("type"))
+            if facet not in facets or not r.get("name"):
+                continue
+            if r.get("name", "").lower().startswith("beverage tasting"):
+                kind = "beverage"
+            elif not kind or (kind != "activity" or r.get("type") != "SPA") and "additional-fees-apply" not in facets:
+                continue
+            out.append(AddOn(
+                kind=kind, name=r["name"].strip(), price=None,
+                price_unit="per_person", unit_label=None, port=None,
+                description="Additional fee on this ship; Disney doesn't publish the price before booking.",
+                source=BASE + (r.get("url") or "/onboard-activities/"),
+            ))
+        return out
+
     # ── Catalog ──────────────────────────────────────────────────────────
 
     def iter_catalog(self, today: Optional[date] = None, workers: int = WORKERS) -> Iterator[CatalogSailing]:
@@ -550,6 +678,14 @@ class DisneyProvider:
     # ── API calls ────────────────────────────────────────────────────────
 
     @staticmethod
+    def _c101_call(path: str, keep: bool) -> dict:
+        return {"method": "GET", "path": path, "auth": "c101", "keep": keep}
+
+    @staticmethod
+    def _today() -> date:
+        return date.today()
+
+    @staticmethod
     def _products_call(filters: list[str], page: int, adults: int, children: int) -> dict:
         return {"method": "POST", "path": PA + "available-products/", "auth": False, "body": {
             "currency": "USD", "filters": filters, "partyMix": party_mix(adults, children),
@@ -609,8 +745,13 @@ class DisneyProvider:
             try:
                 if call["path"].startswith(PA):
                     self._authz()
-                if call.get("auth"):
-                    headers["authorization"] = "BEARER " + self._client_token()
+                kind = _auth_kind(call)
+                if kind == "sa":
+                    headers["authorization"] = "BEARER " + self._client_token("sa")
+                elif kind == "c101":
+                    tok = self._client_token("c101")
+                    headers.update({"authorization": "Bearer " + tok, "x-access-token": tok,
+                                    "x-dcl-intl-phase-2": "true"})
                 self.calls += 1
                 resp = self.http.request(call["method"], BASE + call["path"], headers=headers,
                                          content=json.dumps(call["body"]) if call.get("body") is not None else None)
@@ -626,8 +767,8 @@ class DisneyProvider:
                 wait = _num(resp.headers.get("retry-after")) or 2 ** attempt
                 self._sleep(min(wait, 30))
                 continue
-            if status == 401 and call.get("auth") and attempt == 0:
-                self._token = None  # expired token: fetch a new one and retry once
+            if status == 401 and _auth_kind(call) and attempt == 0:
+                self._tokens.pop(_auth_kind(call), None)  # expired token: fetch a new one and retry once
                 continue
             if status in (401, 403) or "queue-it" in str(resp.url):
                 blocked.append(f"HTTP {status}")
@@ -657,23 +798,25 @@ class DisneyProvider:
                 log.info("Disney authz failed: %s", exc)
             self._authz_done = True
 
-    def _client_token(self) -> str:
+    def _client_token(self, kind: str = "sa") -> str:
         with self._lock:
-            if self._token and time.time() - self._token_at < 1500:
-                return self._token
+            tok, at = self._tokens.get(kind, ("", 0.0))
+            if tok and time.time() - at < 1500:
+                return tok
             try:
                 self.calls += 1
-                resp = self.http.get(BASE + SA + "client-token/", headers=API_HEADERS)
+                resp = self.http.get(BASE + TOKEN_PATHS[kind], headers=API_HEADERS)
                 token = resp.json().get("access_token") if resp.status_code == 200 else None
             except (httpx.HTTPError, ValueError):
                 token = None
             if not token:
                 raise ProviderError("Disney refused the client token")
-            self._token, self._token_at = token, time.time()
+            self._tokens[kind] = (token, time.time())
             return token
 
     def _via_browser(self, calls: list[dict]) -> list[Optional[dict]]:
-        payload = [{"m": c["method"], "u": c["path"], "b": c.get("body"), "a": bool(c.get("auth"))} for c in calls]
+        payload = [{"m": c["method"], "u": c["path"], "b": c.get("body"), "a": _auth_kind(c),
+                    "k": bool(c.get("keep"))} for c in calls]
         script = (
             "(async function(){var calls=" + json.dumps(payload) + ";var strip=" + json.dumps(STRIP_KEYS) + ";"
             "function s(o){if(Array.isArray(o))return o.map(s);"
@@ -681,13 +824,16 @@ class DisneyProvider:
             "if(k==='stateroomTypes'&&o.seawareId)continue;r[k]=s(o[k]);}return r;}return o;}"
             "var H={'accept':'application/json, text/plain, */*','content-type':'application/json',"
             "'x-use-voyage-svc':'true','x-dash-phase-one':'true','x-bypass-product-avail-svc':'false'};"
-            "var tok=null;async function t(){if(!tok){var r=await fetch('" + SA + "client-token/',{headers:H});"
-            "tok=(await r.json()).access_token;}return tok;}"
+            "var TP=" + json.dumps(TOKEN_PATHS) + ";var tok={};async function t(k){if(!tok[k]){"
+            "tok[k]=fetch(TP[k],{headers:H}).then(function(r){return r.json();}).then(function(j){return j.access_token;});}"
+            "return tok[k];}"
             "try{await fetch('" + PA + "authz/private',{method:'POST',headers:H,body:'{}'});}catch(e){}"
             "var out=await Promise.all(calls.map(async function(c){try{var h=Object.assign({},H);"
-            "if(c.a)h['authorization']='BEARER '+(await t());"
+            "if(c.a==='sa')h['authorization']='BEARER '+(await t('sa'));"
+            "if(c.a==='c101'){var x=await t('c101');h['authorization']='Bearer '+x;h['x-access-token']=x;"
+            "h['x-dcl-intl-phase-2']='true';}"
             "var r=await fetch(c.u,{method:c.m,headers:h,body:c.b?JSON.stringify(c.b):undefined});"
-            "return r.ok?s(await r.json()):null;}catch(e){return null;}}));"
+            "if(!r.ok)return null;var j=await r.json();return c.k?j:s(j);}catch(e){return null;}}));"
             "var d=document.createElement('div');d.id='qp-dcl';"
             "d.setAttribute('data-json',encodeURIComponent(JSON.stringify(out)));document.body.appendChild(d);})();"
         )

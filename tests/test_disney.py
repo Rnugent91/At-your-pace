@@ -3,9 +3,10 @@ responses (Sept 2026): the Disney Dream search for November 2026 (2 pages, 7 iti
 and sailing DD1529, 3-Night Very Merrytime Bahamian Cruise from Fort Lauderdale, 2026-11-20."""
 
 import json
+import re
 from datetime import date
 from pathlib import Path
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, unquote, urlparse
 
 import httpx
 import pytest
@@ -26,6 +27,19 @@ def sailings_file(body):
     return f"sailings_{body['productId']}_{body['itineraryId'].replace(',', '-')}.json"
 
 
+def finder_fixture(path):
+    """Fixture for a /dcl-cruise-101-webapi/finder/ path (Port Adventures, onboard activities)."""
+    path = unquote(path)
+    if path.endswith("/list-entity/onboard-activities/"):
+        return load("onboard.json")
+    if path.endswith("/list-entity/port-adventures/bahamas/"):
+        return load("pa_bahamas.json")
+    m = re.search(r"/details-entity/dcl/(\d+);entityType=port-of-call", path)
+    if m and (FIX / f"port_{m.group(1)}.json").exists():
+        return load(f"port_{m.group(1)}.json")
+    return None
+
+
 def make_transport(calls, fail=(), token_status=200):
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(request)
@@ -40,6 +54,12 @@ def make_transport(calls, fail=(), token_status=200):
             if token_status != 200:
                 return httpx.Response(token_status, text="denied")
             return httpx.Response(200, json={"access_token": "tok123", "expires_in": 1800})
+        if path.endswith("/get-client-token/"):
+            return httpx.Response(200, json={"access_token": "c101tok", "expires_in": 1800})
+        if "/dcl-cruise-101-webapi/finder/" in path:
+            assert request.headers["x-access-token"] == "c101tok"
+            data = finder_fixture(request.url.raw_path.decode())
+            return httpx.Response(200, json=data) if data else httpx.Response(502, json={"errorCode": "X"})
         if path.endswith("/available-products/"):
             f = FIX / f"products_p{body['page']}.json"
             return httpx.Response(200, json=load(f.name)) if f.exists() else httpx.Response(200, json={"products": []})
@@ -138,14 +158,35 @@ def test_research_end_to_end():
     assert r.staterooms[0].code == "IGT"
     assert len(r.staterooms) == 29  # 26 categories + IGT/OGT/VGT + 11C guarantee - sold-out 11C
 
-    grat = {a.name: a for a in r.addons}
-    assert grat["Crew gratuities"].price == 16 and grat["Crew gratuities"].price_unit == "per_person_per_day"
-    assert "$48" in grat["Crew gratuities"].description
-    assert grat["Crew gratuities (Concierge)"].price == 27.25
-    assert r.warnings == []
+    add = {a.name: a for a in r.addons}
+    assert add["Crew gratuities"].price == 16 and add["Crew gratuities"].price_unit == "per_person_per_day"
+    assert "$48" in add["Crew gratuities"].description
+    assert add["Crew gratuities (Concierge)"].price == 27.25
 
-    # One client token for both sailing-availability calls, one authz for the search.
+    # Port Adventures for the two ports of call (not Fort Lauderdale), from the Bahamas list.
+    exc = [a for a in r.addons if a.kind == "excursion"]
+    assert {a.port for a in exc} == {"Nassau, Bahamas", "Disney Lookout Cay at Lighthouse Point"}
+    assert not any("castaway" in a.source for a in exc)  # Castaway Cay isn't on this sailing
+    banana = add["Banana Boat (LPT08)"]
+    assert banana.price == 59.0 and banana.price_unit == "per_person"
+    assert banana.unit_label == "per person (ages 10 and up)" and "ages 8 to 9: $49.00" in banana.description
+    assert banana.source.endswith("/port-adventures/lighthouse-point-banana-boat/")
+    atv = add["Adventure by ATV - Per 2 person ATV (LPT24)"]
+    assert atv.price == 289.0 and atv.price_unit == "flat" and atv.unit_label.startswith("per ATV")
+    assert add["Adventure Jeeps, Beach & Local Lunch - Per Jeep (N10A)"].price_unit == "flat"
+    # Dream's paid extras (Disney publishes no prices): Palo/Remy, spa, royal tea, tastings.
+    assert {a.name for a in r.addons if a.kind == "dining"} == {"Palo", "Remy"}
+    assert add["Palo"].price is None and "doesn't publish" in add["Palo"].description
+    assert add["Senses Spa & Salon"].kind == "activity" and add["Royal Court Royal Tea"].kind == "activity"
+    assert add["Beverage Tastings"].kind == "beverage"
+    assert "Palo Steakhouse" not in add and "Enchanted Garden" not in add and "Cove Café" not in add
+    assert any("published per-port prices" in w for w in r.warnings)
+    assert any("Connect@Sea" in w for w in r.warnings)
+    assert len(r.warnings) == 2
+
+    # One client token per API family, one authz for the search.
     assert sum(c.url.path.endswith("/client-token/") for c in calls) == 1
+    assert sum(c.url.path.endswith("/get-client-token/") for c in calls) == 1
     assert sum(c.url.path.endswith("/authz/private") for c in calls) == 1
 
 
@@ -232,8 +273,11 @@ class FakeCF:
             elif c["u"].endswith("/available-sailings/"):
                 f = FIX / sailings_file(c["b"])
                 out.append(load(f.name) if f.exists() else {"sailings": []})
+            elif "/dcl-cruise-101-webapi/finder/" in c["u"]:
+                assert c["a"] == "c101"
+                out.append(finder_fixture(c["u"]))
             elif "get-cruise-details-availability" in c["u"]:
-                assert c["a"] is True
+                assert c["a"] == "sa"
                 out.append(load("details_DD1529.json"))
             elif c["u"].endswith("stateroom-category-search"):
                 out.append(load("categories_DD1529.json"))
@@ -253,8 +297,9 @@ def test_blocked_direct_requests_switch_to_browser():
     assert r.ship == "Disney Dream" and any(s.code == "05B" for s in r.staterooms)
     assert all(urlparse(pl["url"]).netloc == "disneycruise.disney.go.com" for pl in cf.payloads)
     assert all(pl["waitForSelector"]["selector"] == "#qp-dcl" for pl in cf.payloads)
-    # 2 search pages, available-sailings (one batch), details + categories (one batch).
-    assert len(cf.payloads) == 4
+    # 2 search pages, available-sailings, details + categories, onboard + ports, region lists.
+    assert len(cf.payloads) == 6
+    assert any(a.kind == "excursion" and a.port == "Nassau, Bahamas" for a in r.addons)
     # Once switched, no more direct calls are attempted.
     n = len(calls)
     p.research(REQ)
@@ -283,3 +328,11 @@ def test_rate_limit_is_retried():
     p._sleep = slept.append
     r = p.research(REQ)
     assert r.staterooms and slept == [1.0, 1.0]
+
+
+def test_addon_failures_never_fail_research():
+    r = provider([], fail=("/dcl-cruise-101-webapi/",)).research(REQ)
+    assert r.staterooms and r.itinerary
+    assert [a.kind for a in r.addons] == ["other", "other"]  # gratuities still there
+    assert any("onboard activities" in w for w in r.warnings)
+    assert any("No Disney Port Adventures" in w for w in r.warnings)
