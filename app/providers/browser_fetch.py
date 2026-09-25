@@ -8,6 +8,7 @@ DOM node that we read back from the rendered HTML.
 """
 
 import json
+import re
 from typing import Optional
 from urllib.parse import unquote
 
@@ -61,3 +62,11 @@ def fetch_json_in_page(
         return json.loads(text)
     except ValueError as exc:
         raise ProviderError(f"{label} returned non-JSON in browser: {text[:120]}") from exc
+
+
+def page_text(html: str) -> str:
+    """Visible text of an HTML page, whitespace collapsed (for reading published prices)."""
+    soup = BeautifulSoup(html or "", "html.parser")
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+    return re.sub(r"\s+", " ", soup.get_text(" ")).strip()

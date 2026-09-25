@@ -10,7 +10,8 @@
    "location": "Fort Lauderdale, Florida, US",
    "portFlags": [],
    "arrivalTime": "",
-   "departTime": "16:00"
+   "departTime": "16:00",
+   "onShoreActivities": []
   },
   {
    "dayTitle": "2",
@@ -25,7 +26,24 @@
     "NW"
    ],
    "arrivalTime": "09:00",
-   "departTime": "17:00"
+   "departTime": "17:00",
+   "onShoreActivities": [
+    {
+     "activityTitle": "Snorkel by Boat",
+     "startingPrice": "64",
+     "activityPagePath": "https://www.hollandamerica.com/en/us/cruise-destinations/caribbean-cruises/caribbean-ports/hmd/68101"
+    },
+    {
+     "activityTitle": "Historic Nature Walk",
+     "startingPrice": "29",
+     "activityPagePath": "https://www.hollandamerica.com/en/us/cruise-destinations/caribbean-cruises/caribbean-ports/hmd/68108"
+    },
+    {
+     "activityTitle": "Eco Lagoon Kayak Adventure",
+     "startingPrice": "59",
+     "activityPagePath": "https://www.hollandamerica.com/en/us/cruise-destinations/caribbean-cruises/caribbean-ports/hmd/68111"
+    }
+   ]
   },
   {
    "dayTitle": "3",
@@ -37,7 +55,8 @@
    "location": "Days At Sea",
    "portFlags": [],
    "arrivalTime": "12:00 AM",
-   "departTime": "11:59 PM"
+   "departTime": "11:59 PM",
+   "onShoreActivities": []
   },
   {
    "dayTitle": "4",
@@ -49,7 +68,8 @@
    "location": "Ocho Rios, Jamaica",
    "portFlags": [],
    "arrivalTime": "08:00",
-   "departTime": "16:00"
+   "departTime": "16:00",
+   "onShoreActivities": []
   },
   {
    "dayTitle": "5",
@@ -64,7 +84,8 @@
     "NW"
    ],
    "arrivalTime": "08:00",
-   "departTime": "15:00"
+   "departTime": "15:00",
+   "onShoreActivities": []
   },
   {
    "dayTitle": "6",
@@ -76,7 +97,8 @@
    "location": "Cozumel, Mexico",
    "portFlags": [],
    "arrivalTime": "11:00",
-   "departTime": "21:00"
+   "departTime": "21:00",
+   "onShoreActivities": []
   },
   {
    "dayTitle": "7",
@@ -88,7 +110,8 @@
    "location": "Days At Sea",
    "portFlags": [],
    "arrivalTime": "12:00 AM",
-   "departTime": "11:59 PM"
+   "departTime": "11:59 PM",
+   "onShoreActivities": []
   },
   {
    "dayTitle": "8",
@@ -100,7 +123,24 @@
    "location": "Fort Lauderdale, Florida, US",
    "portFlags": [],
    "arrivalTime": "07:00",
-   "departTime": ""
+   "departTime": "",
+   "onShoreActivities": [
+    {
+     "activityTitle": "Everglades Airboat Ride",
+     "startingPrice": "79",
+     "activityPagePath": "https://www.hollandamerica.com/en/us/cruise-destinations/caribbean-cruises/caribbean-ports/fll/18506"
+    },
+    {
+     "activityTitle": "Everglades Airboat Ride & Transfer to Ft Lauderdale Airport",
+     "startingPrice": "79",
+     "activityPagePath": "https://www.hollandamerica.com/en/us/cruise-destinations/caribbean-cruises/caribbean-ports/fll/18508"
+    },
+    {
+     "activityTitle": "Everglades Airboat Ride & Transfer to Miami Airport",
+     "startingPrice": "89",
+     "activityPagePath": "https://www.hollandamerica.com/en/us/cruise-destinations/caribbean-cruises/caribbean-ports/fll/18510"
+    }
+   ]
   }
  ]
 }

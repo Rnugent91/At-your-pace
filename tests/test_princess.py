@@ -58,13 +58,31 @@ class PrincessApi:
         if path == "/caps/pc/pricing/v1/cruises/U644/specials":
             assert body["filters"]["promoFilters"] == ["RG3", "UN*"]
             return fx("specials_U644.json")
+        if path.startswith("/db-excursion/p1.0/ports/"):
+            assert query == "voyageId=U644"
+            if path == "/db-excursion/p1.0/ports/CZM/excursions":
+                return fx("excursions_CZM.json")
+            if path == "/db-excursion/p1.0/ports/RTB/excursions":
+                return None  # 404: reported as missing
+            return {"excursions": []}
         if path == "/caps/pc/pricing/v1/cruises":
             assert body["leadInBy"] == "voyages" and body["filters"]["cruises"] == []
             return fx("lead_fares.json")
         return None
 
+    PAGES = {
+        "/cruise-dining/beverages": "page_beverages.html",
+        "/html/global/disclaimers/crew-appreciation/": "page_crew.html",
+        "/en-us/cruise-dining/crown-grill": "page_crown_grill.html",
+    }
+
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
+        if request.url.host == "www.princess.com":
+            name = self.PAGES.get(request.url.path)
+            if self.status != 200 or not name:
+                return httpx.Response(self.status if self.status != 200 else 404, text="nope")
+            return httpx.Response(200, text=(FIX / name).read_text(encoding="utf-8"))
         assert request.headers["pcl-client-id"] and request.headers["bookingcompany"] == "PC"
         path = request.url.path.replace("/pcl-web/internal", "")
         if self.status != 200:
@@ -161,8 +179,42 @@ def test_research_by_ship_and_date():
     addons = {a.name: a for a in r.addons}
     assert addons["Princess Plus (fare upgrade)"].price == 490.0
     assert addons["Princess Premier (fare upgrade)"].price == 735.0
-    assert all(a.price_unit == "per_person" for a in r.addons)
+    assert all(a.price_unit == "per_person" for a in r.addons if "fare upgrade" in a.name)
     assert "per person per day" in addons["Princess Plus (fare upgrade)"].description
+
+
+def test_research_addons():
+    r = provider(PrincessApi()).research(req())
+    addons = {a.name: a for a in r.addons}
+    bev = [a for a in r.addons if a.kind == "beverage" and "fare upgrade" not in a.name]
+    assert [a.name for a in bev] == ["Premier Beverage Package", "Plus Beverage Package", "Zero-Alcohol Package",
+                                     "Classic Soda Package"]
+    assert [a.price for a in bev] == [84.99, 64.99, 29.99, 14.99]
+    assert all(a.price_unit == "per_person_per_day" and "20% service charge" in a.description for a in bev)
+    grill = addons["Crown Grill"]  # Sun Princess: the Sun & Star price
+    assert (grill.kind, grill.price, grill.price_unit) == ("dining", 60.0, "per_person")
+    assert "$30.00" in grill.description
+    crew = [a for a in r.addons if a.name.startswith("Crew appreciation")]
+    assert [a.price for a in crew] == [20.0, 19.0, 18.0]
+    assert all(a.price_unit == "per_person_per_day" for a in crew)
+    ex = [a for a in r.addons if a.kind == "excursion"]
+    assert [a.port for a in ex] == ["Cozumel, Mexico"] * 3
+    assert ex[0].name.startswith("Jet Ski") and ex[0].price == 179.95 and ex[0].unit_label == "per adult"
+    assert "includes meal" in ex[1].description
+    assert any("Sabatini" in w and "Couldn't load" in w for w in r.warnings)
+    assert any("Roatan" in w for w in r.warnings)
+    assert any("published fleet-wide prices" in w for w in r.warnings)
+    assert any("MedallionNet" in w for w in r.warnings)
+    # Other ships get the fleet price
+    from app.providers.princess import parse_specialty_dining
+    text = (FIX / "page_crown_grill.html").read_text()
+    assert parse_specialty_dining(text, "GP") == (55.0, 27.5)
+
+
+def test_addon_failures_never_fail_research():
+    r = provider(PrincessApi(fail=("/db-excursion",))).research(req())
+    assert r.staterooms and not [a for a in r.addons if a.kind == "excursion"]
+    assert any("shore excursions" in w for w in r.warnings)
 
 
 def test_research_by_booking_url_and_guest_warning():
@@ -178,7 +230,8 @@ def test_research_by_booking_url_and_guest_warning():
 def test_premier_failure_keeps_standard_and_plus():
     api = PrincessApi(fail=("/specials",))
     r = provider(api).research(req())
-    assert r.staterooms and [a.name for a in r.addons] == ["Princess Plus (fare upgrade)"]
+    assert r.staterooms
+    assert [a.name for a in r.addons if "fare upgrade" in a.name] == ["Princess Plus (fare upgrade)"]
 
 
 def test_unknown_ship_and_missing_sailing():

@@ -42,6 +42,13 @@ class HalSite:
         self.page_size_docs = page_size_docs
         self.requests: list[httpx.Request] = []
 
+    PAGES = {
+        "/en/us/onboard-packages/beverage-packages": "page_beverages.html",
+        "/en/us/onboard-packages/cruise-ship-wifi": "page_wifi.html",
+        "/en/us/plan-a-cruise/get-ready-for-your-cruise/faq/know-before-you-go": "page_crew.html",
+        "/en/us/onboard-experiences/dining/pinnacle-grill": "page_pinnacle_grill.html",
+    }
+
     def search(self, params: dict) -> dict:
         fq = params.get("fq", [])
         docs = search_docs()
@@ -68,6 +75,8 @@ class HalSite:
             if self.price_status != 200:
                 return httpx.Response(self.price_status, json={"errors": ["x"]})
             return httpx.Response(200, json=fx("price_J711.json"))
+        if path in self.PAGES:
+            return httpx.Response(200, text=(FIX / self.PAGES[path]).read_text(encoding="utf-8"))
         if path == "/bin/carnival/hal/us/en/find-a-cruise/c7w07a/j711/itinerarylistview.v2.json":
             return httpx.Response(200, json=fx("itinerary_J711.json"))
         return httpx.Response(404, text="not found")
@@ -150,10 +159,34 @@ def test_research_by_ship_and_date():
     cats = [s.category for s in r.staterooms]
     assert cats == sorted(cats, key=["Interior", "Ocean View", "Balcony", "Suite", "Other"].index)
 
-    (hia,) = r.addons
+    hia = r.addons[0]
     assert hia.name == "Have It All package (fare upgrade)"
     assert hia.price == 455.0 and hia.price_unit == "per_person"
     assert "65.00 per person per day" in hia.description
+
+
+def test_research_addons():
+    r = provider(HalSite()).research(req())
+    by = {a.name: a for a in r.addons}
+    bev = [a for a in r.addons if a.kind == "beverage" and "fare upgrade" not in a.name]
+    assert [(a.name, a.price) for a in bev] == [("Elite Beverage Package", 60.95), ("Signature Beverage Package", 55.95),
+                                                ("Quench Beverage Package", 17.95)]
+    assert all(a.price_unit == "per_person_per_day" and "20% service charge" in a.description for a in bev)
+    assert "starting at" in by["Quench Beverage Package"].description
+    wifi = [(a.name, a.price, a.price_unit) for a in r.addons if a.kind == "internet"]
+    assert wifi == [("Premium Wi-Fi", 26.0, "per_device_per_day"), ("Stream Wi-Fi", 38.0, "per_device_per_day")]
+    assert by["Pinnacle Grill"].price == 52.0 and by["Pinnacle Grill"].price_unit == "per_person"
+    crew = [(a.name, a.price) for a in r.addons if a.name.startswith("Crew appreciation")]
+    assert crew == [("Crew appreciation (service charge) - non-suite staterooms", 18.0),
+                    ("Crew appreciation (service charge) - suites", 20.0)]
+    ex = [a for a in r.addons if a.kind == "excursion"]
+    assert {a.port for a in ex} == {"RelaxAway Half Moon Cay, Bahamas", "Fort Lauderdale, Florida, US"}
+    snorkel = next(a for a in ex if a.name == "Snorkel by Boat")
+    assert snorkel.price == 64.0 and snorkel.unit_label == "per adult (from)"
+    assert snorkel.source.startswith("https://www.hollandamerica.com/en/us/cruise-destinations/")
+    assert any("Canaletto" in w and "Couldn't load" in w for w in r.warnings)  # page not in the fixtures
+    assert any("no priced shore excursions" in w and "Cozumel" in w for w in r.warnings)
+    assert any("published fleet-wide prices" in w for w in r.warnings)
 
 
 def test_research_by_booking_url():

@@ -1,0 +1,31 @@
+{
+ "excursions": [
+  {
+   "id": "CZM-590",
+   "name": "Jet Ski for Two: Islands Beach, Snorkel & Pool",
+   "duration": "3",
+   "price": 179.95,
+   "currency": "USD",
+   "activityLevel": "Moderate",
+   "foodService": null
+  },
+  {
+   "id": "CZM-620",
+   "name": "All-Inclusive Luxury Sail & Snorkel with Lunch",
+   "duration": "4",
+   "price": 119.95,
+   "currency": "USD",
+   "activityLevel": "Moderate",
+   "foodService": "Includes meal"
+  },
+  {
+   "id": "CZM-635",
+   "name": "BLU Ocean Boat Club with Unlimited Food, Premium Open Bar & Snorkeling",
+   "duration": "3.5",
+   "price": 99.95,
+   "currency": "USD",
+   "activityLevel": "Easy",
+   "foodService": "Includes snack"
+  }
+ ]
+}

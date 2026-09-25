@@ -35,16 +35,17 @@ import logging
 import re
 import time
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from typing import Iterator, Optional
 from urllib.parse import urlencode
 
 import httpx
 
-from ..cf_browser import USER_AGENT, CloudflareBrowser
+from ..cf_browser import USER_AGENT, BrowserRenderingError, CloudflareBrowser
 from ..models import AddOn, ItineraryDay, SailingResearch, Stateroom
 from .base import CatalogSailing, ProviderError, ResearchRequest
-from .browser_fetch import fetch_json_in_page
+from .browser_fetch import fetch_json_in_page, page_text
 
 log = logging.getLogger(__name__)
 
@@ -92,6 +93,99 @@ SEARCH_FIELDS = [
 URL_RE = re.compile(r"/find-a-cruise/([a-z0-9]+)/([a-z0-9]+)", re.I)
 URL_PARAM_RE = re.compile(r"(?:cruiseId|voyageId|voyageCode|cruiseCode)=([A-Za-z0-9]{3,6})\b", re.I)
 NON_PORT_IDS = {"ATSEADAY"}
+
+
+# Published add-on pages (hollandamerica.com's own prices; sailing-specific prices need a booking).
+PAGES = {
+    "beverage": "/onboard-packages/beverage-packages",
+    "wifi": "/onboard-packages/cruise-ship-wifi",
+    "crew": "/plan-a-cruise/get-ready-for-your-cruise/faq/know-before-you-go",
+}
+DINING_PAGES = {
+    "Pinnacle Grill": "/onboard-experiences/dining/pinnacle-grill",
+    "Canaletto": "/onboard-experiences/dining/canaletto",
+    "Tamarind": "/onboard-experiences/dining/tamarind",
+    "Morimoto by Sea": "/onboard-experiences/dining/morimoto-by-sea",
+    "Sel de Mer": "/onboard-experiences/dining/sel-de-mer",
+}
+BEVERAGE_BLURBS = {
+    "Elite Beverage Package": "Premium spirits, cocktails and wines up to US$16 each plus everything in Signature "
+                              "and Quench; 15 alcoholic drinks a day, unlimited non-alcoholic.",
+    "Signature Beverage Package": "Beer, spirits, cocktails and wines by the glass up to US$12 each plus Quench; "
+                                  "15 drinks a day.",
+    "Quench": "Non-alcoholic: Coca-Cola products, espresso drinks, juices, mocktails and bottled water; "
+              "15 drinks a day.",
+}
+WIFI_BLURBS = {
+    "Surf": "Web, email, news and messaging apps.",
+    "Premium": "Surf plus audio/video messaging and calling (no video streaming).",
+    "Stream": "Everything in Premium plus video streaming (Netflix, Disney+ and more).",
+}
+
+
+def parse_beverage_packages(text: str) -> tuple[list[tuple[str, float]], Optional[int]]:
+    """[(package, USD per person per day)] and the service-charge % from HAL's beverage page.
+    The Have It All package is left out (it's priced from the live fares)."""
+    out: list[tuple[str, float]] = []
+    for m in re.finditer(r"US ?\$([\d,.]+) Per Person, Per Day\*? ([A-Z][\w ]*?(?:Beverage )?Package)\b", text):
+        name = m.group(2).strip()
+        if "Have It All" in name or name in {n for n, _ in out}:
+            continue
+        out.append((name, float(m.group(1).replace(",", ""))))
+    for m in re.finditer(r"Starts at US ?\$([\d,.]+) Per Person, Per Day ([A-Z]\w+)", text):
+        if m.group(2) not in {n for n, _ in out}:
+            out.append((m.group(2), float(m.group(1).replace(",", ""))))
+    sc = re.search(r"(\d+)% Service Charge is automatically applied to all Beverage", text, re.I) or \
+        re.search(r"(\d+)% service charge", text, re.I)
+    return out, int(sc.group(1)) if sc else None
+
+
+def parse_wifi_plans(text: str) -> list[tuple[str, float]]:
+    """[(plan, USD per day)] from HAL's Wi-Fi page ('US$26.00 per day‡ Log In & Upgrade to Premium')."""
+    out = []
+    for m in re.finditer(r"US ?\$([\d,.]+) per day\S* Log In & Upgrade to (\w+)", text):
+        out.append((m.group(2), float(m.group(1).replace(",", ""))))
+    return out
+
+
+def parse_cover_charge(text: str) -> Optional[float]:
+    m = re.search(r"(?:US ?)?\$(\d+(?:\.\d+)?) per person", text or "")
+    return float(m.group(1)) if m else None
+
+
+def parse_crew_appreciation(text: str) -> list[tuple[str, float]]:
+    m = re.search(r"Crew Appreciation is US ?\$([\d.]+)\*? per guest per day for non-suite stateroom guests "
+                  r"and US ?\$([\d.]+)\*? per guest per day for suite guests", text or "")
+    if not m:
+        return []
+    return [("non-suite staterooms", float(m.group(1))), ("suites", float(m.group(2)))]
+
+
+def excursion_addons(items: list[dict], source: str) -> list[AddOn]:
+    """Shore excursions listed with a starting price on each port day of HAL's itinerary."""
+    out, seen = [], set()
+    for it in items:
+        port = re.sub(r"[™®]", "", it.get("title") or it.get("location") or "").strip()
+        for act in it.get("onShoreActivities") or []:
+            try:
+                price = float(str(act.get("startingPrice")).replace(",", ""))
+            except (TypeError, ValueError):
+                continue
+            name = (act.get("activityTitle") or "").strip()
+            if not name or (port, name) in seen:
+                continue
+            seen.add((port, name))
+            out.append(AddOn(
+                kind="excursion",
+                name=name,
+                price=price,
+                price_unit="per_person",
+                unit_label="per adult (from)",
+                port=port,
+                description="HAL's published starting price; final price is set when booked.",
+                source=act.get("activityPagePath") or source,
+            ))
+    return out
 
 
 def ship_code_for(ship: str) -> Optional[str]:
@@ -247,9 +341,11 @@ class HollandAmericaProvider:
         )
         warnings = research.warnings
 
+        items: list[dict] = []
         if doc.get("contentPath"):
             try:
-                research.itinerary = self.fetch_itinerary(doc["contentPath"], sail_date)
+                items = self.itinerary_items(doc["contentPath"])
+                research.itinerary = self.map_days(items, sail_date)
             except ProviderError as exc:
                 warnings.append(f"Couldn't load HAL's day-by-day itinerary ({exc}).")
 
@@ -279,6 +375,11 @@ class HollandAmericaProvider:
                 description=f"{HIA_DESC} Priced as the difference from the Cruise Only fare shown{per_day}.",
                 source=details_url,
             ))
+        try:
+            research.addons += self.fetch_addons(items, details_url, warnings)
+        except Exception as exc:  # add-ons must never fail research
+            log.warning("HAL add-ons for %s failed: %s", cruise_id, exc)
+            warnings.append(f"Couldn't load Holland America add-ons ({exc}).")
         warnings.append(
             "HAL stateroom prices are the 'Cruise Only: Our Lowest Fare' (restricted deposit) where offered; "
             "taxes, fees and port expenses are listed separately."
@@ -308,10 +409,121 @@ class HollandAmericaProvider:
 
     # ── Itinerary ────────────────────────────────────────────────────────
 
+    def itinerary_items(self, content_path: str) -> list[dict]:
+        data = self._json(f"/bin/carnival/hal/us/en{content_path}/itinerarylistview.v2.json")
+        return data.get("itineraryListItems") or []
+
     def fetch_itinerary(self, content_path: str, sail_date: str) -> list[ItineraryDay]:
-        path = f"/bin/carnival/hal/us/en{content_path}/itinerarylistview.v2.json"
-        data = self._json(path)
-        return self.map_days(data.get("itineraryListItems") or [], sail_date)
+        return self.map_days(self.itinerary_items(content_path), sail_date)
+
+    # ── Add-ons ──────────────────────────────────────────────────────────
+
+    def _page(self, path: str) -> str:
+        """A hollandamerica.com page's text; through Cloudflare if the direct request is refused."""
+        url = self.base_url + LOCALE_PATH + path
+        err = "blocked"
+        if not self._blocked:
+            self.calls += 1
+            try:
+                resp = self.http.get(url, headers={"user-agent": USER_AGENT, "accept": "text/html"})
+                if resp.status_code == 200:
+                    return page_text(resp.text)
+                err = f"HTTP {resp.status_code}"
+            except httpx.HTTPError as exc:
+                err = str(exc)
+        if self.cf is None or not self.cf.configured:
+            raise ProviderError(f"{url} failed: {err}")
+        self.calls += 1
+        try:
+            return page_text(self.cf.content({"url": url, "gotoOptions": {"waitUntil": "domcontentloaded",
+                                                                          "timeout": 30000}}))
+        except BrowserRenderingError as exc:
+            raise ProviderError(f"{url} failed in browser: {exc}") from exc
+
+    def fetch_addons(self, items: list[dict], source: str, warnings: list[str]) -> list[AddOn]:
+        """Beverage packages, Wi-Fi plans, specialty dining and crew appreciation (published prices),
+        plus the itinerary's shore excursions."""
+        pages = {**PAGES, **{f"dine:{k}": v for k, v in DINING_PAGES.items()}}
+
+        def page(path):
+            try:
+                return self._page(path)
+            except ProviderError as exc:
+                log.info("HAL page %s failed: %s", path, exc)
+                return None
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            futs = {k: pool.submit(page, v) for k, v in pages.items()}
+            texts = {k: f.result() for k, f in futs.items()}
+
+        def url(path):
+            return self.base_url + LOCALE_PATH + path
+
+        out: list[AddOn] = []
+        missing: list[str] = []
+        bev, sc = parse_beverage_packages(texts["beverage"]) if texts["beverage"] else ([], None)
+        sc_note = f"Excludes HAL's {sc or 20}% service charge."
+        for name, price in bev:
+            out.append(AddOn(kind="beverage", name=name if "Package" in name else f"{name} Beverage Package",
+                             price=price, price_unit="per_person_per_day", unit_label="per person, per day",
+                             port=None,
+                             description=" ".join(x for x in (BEVERAGE_BLURBS.get(name), "Published price"
+                                                  + (" (starting at)" if "Package" not in name else "") + ".",
+                                                  sc_note, "All adults in the stateroom must buy it.") if x),
+                             source=url(PAGES["beverage"])))
+        if not bev:
+            missing.append("beverage packages")
+
+        wifi = parse_wifi_plans(texts["wifi"]) if texts["wifi"] else []
+        for name, price in wifi:
+            out.append(AddOn(kind="internet", name=f"{name} Wi-Fi", price=price,
+                             price_unit="per_device_per_day", unit_label="per day (one device)", port=None,
+                             description=f"{WIFI_BLURBS.get(name, '')} Published price based on a 7-day package; "
+                                         "discounts may apply on longer sailings.".strip(),
+                             source=url(PAGES["wifi"])))
+        if not wifi:
+            missing.append("Wi-Fi plans")
+
+        for name, path in DINING_PAGES.items():
+            price = parse_cover_charge(texts.get(f"dine:{name}") or "")
+            if price is None:
+                missing.append(name)
+                continue
+            out.append(AddOn(kind="dining", name=name, price=price, price_unit="per_person",
+                             unit_label="per person, per meal", port=None,
+                             description="Specialty restaurant cover charge plus 20% service charge; venues vary by "
+                                         "ship. Have It All guests can use their specialty dining credit.",
+                             source=url(path)))
+
+        crew = parse_crew_appreciation(texts["crew"]) if texts["crew"] else []
+        for label, price in crew:
+            out.append(AddOn(kind="other", name=f"Crew appreciation (service charge) - {label}", price=price,
+                             price_unit="per_person_per_day", unit_label="per guest, per day", port=None,
+                             description="Added daily to the onboard account (adjustable).",
+                             source=url(PAGES["crew"])))
+        if not crew:
+            missing.append("crew appreciation")
+
+        excursions = excursion_addons(items, source)
+        out.extend(excursions)
+        ex_ports = {a.port for a in excursions}
+        no_ex = []
+        for it in items[1:]:
+            port = re.sub(r"[™®]", "", it.get("title") or "").strip()
+            if (it.get("portID") or "").upper() in NON_PORT_IDS or str(it.get("portID") or "").isdigit():
+                continue
+            if port and port not in ex_ports and port not in no_ex:
+                no_ex.append(port)
+
+        if any(a.kind != "excursion" for a in out):
+            warnings.append("Holland America drink, Wi-Fi, specialty dining and crew appreciation prices are "
+                            "published fleet-wide prices from hollandamerica.com, not quoted for this sailing; "
+                            "shore excursion prices are HAL's 'from' prices.")
+        if missing:
+            warnings.append(f"Couldn't load Holland America add-on prices for: {', '.join(missing)}.")
+        if no_ex:
+            warnings.append(f"HAL lists no priced shore excursions online for: {', '.join(no_ex)}.")
+        return out
 
     @staticmethod
     def map_days(items: list[dict], sail_date: str) -> list[ItineraryDay]:

@@ -34,16 +34,17 @@ import re
 import time
 import uuid
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from typing import Iterator, Optional
 from urllib.parse import urlencode
 
 import httpx
 
-from ..cf_browser import USER_AGENT, CloudflareBrowser
+from ..cf_browser import USER_AGENT, BrowserRenderingError, CloudflareBrowser
 from ..models import AddOn, ItineraryDay, SailingResearch, Stateroom
 from .base import CatalogSailing, ProviderError, ResearchRequest
-from .browser_fetch import fetch_json_in_page
+from .browser_fetch import fetch_json_in_page, page_text
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +97,15 @@ PREMIER_DESC = (
     "(up to 4 devices), crew appreciation, unlimited specialty dining, photo package, "
     "reserved theater seating, and more."
 )
+
+# Published add-on pages (princess.com's own "from" prices; sailing-specific prices need a booking).
+BEVERAGE_PAGE = SITE + "/cruise-dining/beverages"
+CREW_PAGE = SITE + "/html/global/disclaimers/crew-appreciation/"
+DINING_PAGES = {
+    "Crown Grill": SITE + "/en-us/cruise-dining/crown-grill",
+    "Sabatini's Italian Trattoria": SITE + "/en-us/cruise-dining/sabatinis-italian-trattoria",
+}
+NEWEST_SHIPS = {"SU", "ST"}  # Sun & Star Princess: higher published specialty dining prices
 
 VOYAGE_RE = re.compile(r"(?:voyageCode|voyageId|voyage|cruiseCode|cruiseId|cruise)=([A-Za-z0-9]{4,6})\b", re.I)
 
@@ -191,6 +201,90 @@ def upgrade_price(std: dict[str, dict], other: dict[str, dict], guests: int) -> 
     if not diffs:
         return None
     return Counter(diffs).most_common(1)[0][0]
+
+
+def _money(v: str) -> float:
+    return float(v.replace(",", ""))
+
+
+def parse_beverage_packages(text: str) -> tuple[list[tuple[str, float, str]], Optional[int]]:
+    """[(package name, USD per person per day, blurb)] and the service-charge % from the beverages page."""
+    out: list[tuple[str, float, str]] = []
+    for m in re.finditer(r"Value of \$([\d,.]+) USD\*? per day View (\w+) Beverage Package Terms", text):
+        tier = m.group(2)
+        blurb = {"Premier": "Drinks up to $20 each: top-shelf spirits, reserve wines by the glass, cocktails, "
+                            "specialty coffees and non-alcoholic drinks.",
+                 "Plus": "Drinks up to $15 each: cocktails, wine by the glass, beer, specialty coffees, "
+                         "sodas, bottled water, juices and smoothies."}.get(tier, "")
+        out.append((f"{tier} Beverage Package", _money(m.group(1)), blurb))
+    seen = {n for n, _, _ in out}
+    for m in re.finditer(r"([A-Z][\w-]*(?: [A-Z][\w-]*)*) Package at \$([\d,.]+)/day", text):
+        name = m.group(1).strip() + " Package"
+        name = re.sub(r"^.*?(Zero-Alcohol|Classic Soda)", r"\1", name)
+        if name in seen:
+            continue
+        seen.add(name)
+        blurb = {"Zero-Alcohol Package": "Specialty coffees and teas, sodas, mocktails, bottled/premium water "
+                                         "and Red Bull (no alcohol).",
+                 "Classic Soda Package": "Sodas, fruit juices, mocktails and smoothies."}.get(name, "")
+        out.append((name, _money(m.group(2)), blurb))
+    sc = re.search(r"(\d+)% service charge", text, re.I)
+    return out, int(sc.group(1)) if sc else None
+
+
+def parse_specialty_dining(text: str, ship_code: Optional[str]) -> Optional[tuple[float, Optional[float]]]:
+    """(adult, child 3-11) cover charge for this ship from a Princess specialty restaurant page."""
+    m = re.search(r"\$([\d.]+)/adult, \$([\d.]+)/child \(3-11\); Sun & Star Princess only: "
+                  r"\$([\d.]+)/adult, \$([\d.]+)/child", text)
+    if m:
+        if ship_code in NEWEST_SHIPS:
+            return float(m.group(3)), float(m.group(4))
+        return float(m.group(1)), float(m.group(2))
+    m = re.search(r"\$([\d.]+)/adult(?:, \$([\d.]+)/child)?", text)
+    if m:
+        return float(m.group(1)), float(m.group(2)) if m.group(2) else None
+    return None
+
+
+def parse_crew_appreciation(text: str) -> list[tuple[str, float]]:
+    """[(stateroom group, USD per guest per day)] from Princess's crew appreciation disclaimer."""
+    out = []
+    for label, pat in (("Suites", r"\bSuites \$([\d.]+) USD per person per day"),
+                       ("Mini-suites, Cabanas and Reserve Collection",
+                        r"Mini Suites, Cabanas, and Reserve Collection \$([\d.]+) USD per person per day"),
+                       ("All other staterooms", r"All other stateroom types \$([\d.]+) USD per person per day")):
+        m = re.search(pat, text)
+        if m:
+            out.append((label, float(m.group(1))))
+    return out
+
+
+def excursion_addons(data: dict, port: str, source: str) -> list[AddOn]:
+    out = []
+    for ex in (data or {}).get("excursions") or []:
+        try:
+            price = float(ex.get("price"))
+        except (TypeError, ValueError):
+            continue
+        bits = []
+        if ex.get("duration"):
+            bits.append(f"{ex['duration']} hours")
+        if ex.get("activityLevel"):
+            bits.append(f"activity: {ex['activityLevel']}")
+        food = (ex.get("foodService") or "").strip()
+        if food and food.lower() not in {"no", "n", "none"}:
+            bits.append(food.lower())
+        out.append(AddOn(
+            kind="excursion",
+            name=(ex.get("name") or ex.get("id") or "").strip(),
+            price=price,
+            price_unit="per_person",
+            unit_label="per adult",
+            port=port,
+            description="; ".join(bits) or None,
+            source=source,
+        ))
+    return out
 
 
 class PrincessProvider:
@@ -458,6 +552,11 @@ class PrincessProvider:
         elif guests != 2:
             warnings.append(f"Princess prices are the average per person for {guests} guests in the stateroom.")
         research.addons = self.package_addons(fares, premier, guests, research.nights, details_url)
+        try:
+            research.addons += self.fetch_addons(voyage, v.get("ports") or [], ship.get("id"), ports, warnings)
+        except Exception as exc:  # add-ons must never fail research
+            log.warning("Princess add-ons for %s failed: %s", voyage, exc)
+            warnings.append(f"Couldn't load Princess add-ons ({exc}).")
         warnings.append(
             "Princess fares shown are 'Princess Standard'. Cruise fare excludes government taxes and "
             "Princess's required cruise fees, which are listed separately."
@@ -628,6 +727,127 @@ class PrincessProvider:
                 description=f"{desc} Priced as the difference from the Princess Standard fare{per_day}.",
                 source=source,
             ))
+        return out
+
+    # ── Add-ons ──────────────────────────────────────────────────────────
+
+    def _page(self, url: str) -> str:
+        """A princess.com page's text; through Cloudflare if the direct request is refused."""
+        if not self._blocked:
+            self.calls += 1
+            try:
+                resp = self.http.get(url, headers={"user-agent": USER_AGENT, "accept": "text/html"})
+                if resp.status_code == 200:
+                    return page_text(resp.text)
+                err = f"HTTP {resp.status_code}"
+            except httpx.HTTPError as exc:
+                err = str(exc)
+        else:
+            err = "blocked"
+        if self.cf is None or not self.cf.configured:
+            raise ProviderError(f"{url} failed: {err}")
+        self.calls += 1
+        try:
+            return page_text(self.cf.content({"url": url, "gotoOptions": {"waitUntil": "domcontentloaded",
+                                                                          "timeout": 30000}}))
+        except BrowserRenderingError as exc:
+            raise ProviderError(f"{url} failed in browser: {exc}") from exc
+
+    def fetch_addons(self, voyage: str, port_codes: list[str], ship_code: Optional[str],
+                     port_names: dict[str, str], warnings: list[str]) -> list[AddOn]:
+        """Drink packages, specialty dining, crew appreciation (published prices) and this voyage's
+        shore excursions per port, fetched in parallel."""
+        ports = [p for i, p in enumerate(port_codes) if p and p not in port_codes[:i]]
+        pages = {"bev": BEVERAGE_PAGE, "crew": CREW_PAGE, **{f"dine:{k}": u for k, u in DINING_PAGES.items()}}
+
+        def page(url):
+            try:
+                return self._page(url)
+            except ProviderError as exc:
+                log.info("Princess page %s failed: %s", url, exc)
+                return None
+
+        def excursions(code):
+            try:
+                return self._json("GET", f"/db-excursion/p1.0/ports/{code}/excursions?"
+                                  + urlencode({"voyageId": voyage}), attempts=2)
+            except ProviderError as exc:
+                log.info("Princess excursions %s/%s failed: %s", voyage, code, exc)
+                return None
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            page_futs = {k: pool.submit(page, u) for k, u in pages.items()}
+            ex_futs = {c: pool.submit(excursions, c) for c in ports}
+            texts = {k: f.result() for k, f in page_futs.items()}
+            ex_data = {c: f.result() for c, f in ex_futs.items()}
+
+        out: list[AddOn] = []
+        missing: list[str] = []
+        published: list[str] = []
+
+        if texts["bev"]:
+            packages, sc = parse_beverage_packages(texts["bev"])
+            note = (f"Published price; excludes Princess's {sc}% service charge." if sc
+                    else "Published price; excludes Princess's service charge.")
+            for name, price, blurb in packages:
+                listed = " Princess lists it as a value of this amount per day." if "Beverage" in name else ""
+                out.append(AddOn(kind="beverage", name=name, price=price, price_unit="per_person_per_day",
+                                 unit_label="per person, per day", port=None,
+                                 description=f"{blurb}{listed} {note} Must be bought for every day of the "
+                                             "cruise.".strip(),
+                                 source=BEVERAGE_PAGE))
+            if packages:
+                published.append("drink packages")
+        else:
+            packages = []
+        if not packages:
+            missing.append("drink packages")
+
+        for name, url in DINING_PAGES.items():
+            text = texts.get(f"dine:{name}")
+            price = parse_specialty_dining(text, ship_code) if text else None
+            if not price:
+                missing.append(name)
+                continue
+            adult, child = price
+            desc = "Specialty restaurant cover charge per meal, plus 20% service charge; included with Princess Premier."
+            if child:
+                desc += f" Children 3-11: ${child:,.2f}."
+            out.append(AddOn(kind="dining", name=name, price=adult, price_unit="per_person",
+                             unit_label="per adult, per meal", port=None, description=desc, source=url))
+            published.append(name)
+
+        crew = parse_crew_appreciation(texts["crew"]) if texts["crew"] else []
+        for label, price in crew:
+            out.append(AddOn(kind="other", name=f"Crew appreciation (gratuities) - {label}", price=price,
+                             price_unit="per_person_per_day", unit_label="per guest, per day", port=None,
+                             description="Added daily to the onboard account (adjustable); included with "
+                                         "Princess Plus and Premier.",
+                             source=CREW_PAGE))
+        if crew:
+            published.append("crew appreciation")
+        else:
+            missing.append("crew appreciation")
+
+        no_ex = []
+        for code in ports:
+            name = port_names.get(code, code)
+            found = excursion_addons(ex_data.get(code) or {}, name,
+                                     f"{SITE}/cruise-search/details/?voyageCode={voyage}")
+            if found:
+                out.extend(found)
+            elif ex_data.get(code) is None:
+                no_ex.append(name)
+
+        if published:
+            warnings.append("Princess " + ", ".join(published) + " are published fleet-wide prices from "
+                            "princess.com, not quoted for this sailing.")
+        warnings.append("Princess doesn't publish MedallionNet Wi-Fi a la carte prices online (only in Manage "
+                        "Booking); Wi-Fi is included in Princess Plus (1 device) and Premier (4 devices).")
+        if missing:
+            warnings.append(f"Couldn't load Princess add-on prices for: {', '.join(missing)}.")
+        if no_ex:
+            warnings.append(f"Couldn't load Princess shore excursions for: {', '.join(no_ex)}.")
         return out
 
     # ── Master catalog ───────────────────────────────────────────────────
