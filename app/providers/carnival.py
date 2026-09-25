@@ -11,13 +11,23 @@ XHR traffic, with the cruise search first spotted in the "cruisekit" project):
 All of these answer plain server requests today. If Akamai starts blocking a
 server IP, the same request is replayed from inside a real browser through
 Cloudflare Browser Rendering (when configured).
+
+Prices: carnival.com (US) now shows all-in prices — the search API reports
+`taxesIncludedUSEnabled: true` and the site prints "* Taxes & fees are included".
+The booking API's per-guest breakdown confirms it: shown price = fare +
+`cruiseFeesAndExpenses` (port expenses) + `taxesAndFees` (e.g. $564 = $369 +
+$100.56 + $94.44). We report the fare excluding both, and their sum as
+`taxes_fees_per_person`.
 """
 
 import json
 import logging
 import re
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
-from typing import Optional
+from typing import Iterator, Optional
 from urllib.parse import unquote, urlencode
 
 import httpx
@@ -25,7 +35,7 @@ from bs4 import BeautifulSoup
 
 from ..cf_browser import USER_AGENT, BrowserRenderingError, CloudflareBrowser
 from ..models import AddOn, ItineraryDay, SailingResearch, Stateroom
-from .base import ProviderError, ResearchRequest
+from .base import CatalogSailing, ProviderError, ResearchRequest
 from .royal_caribbean import unit_from_label
 
 log = logging.getLogger(__name__)
@@ -146,6 +156,7 @@ def _strip_html(text: Optional[str]) -> str:
 
 class CarnivalProvider:
     name = "Carnival (live)"
+    cruise_line = "Carnival"
 
     def __init__(self, cf: Optional[CloudflareBrowser] = None, http: Optional[httpx.Client] = None,
                  base_url: str = BASE_URL):
@@ -153,15 +164,25 @@ class CarnivalProvider:
         self.http = http or httpx.Client(timeout=30, follow_redirects=True)
         self.base_url = base_url.rstrip("/")
         self._blocked = False  # set once carnival.com refuses server requests; later calls go via CF
+        self._lock = threading.Lock()
+        self._sleep = time.sleep
+        self._today = date.today
+        self.http_calls = 0  # direct HTTP requests made (for catalog run stats)
 
     def handles(self, cruise_line: str) -> bool:
         return "carnival" in cruise_line.lower()
 
     # ── HTTP ─────────────────────────────────────────────────────────────
 
-    def _json(self, method: str, path: str, body: Optional[dict] = None):
-        """Call a carnival.com JSON endpoint directly, or from inside a browser if blocked."""
-        if not self._blocked:
+    def _json(self, method: str, path: str, body: Optional[dict] = None, attempts: int = 4):
+        """Call a carnival.com JSON endpoint directly (retrying 429/5xx with backoff),
+        or from inside a browser via Cloudflare if carnival.com blocks this server."""
+        cf_ok = self.cf is not None and self.cf.configured
+        attempt = 0
+        while not self._blocked:
+            attempt += 1
+            with self._lock:
+                self.http_calls += 1
             try:
                 resp = self.http.request(
                     method,
@@ -174,18 +195,32 @@ class CarnivalProvider:
                         "user-agent": USER_AGENT,
                     },
                 )
-                if resp.status_code in (401, 403, 429) and self.cf is not None and self.cf.configured:
-                    log.warning("carnival.com refused %s (%s); switching to Cloudflare browser", path, resp.status_code)
-                    self._blocked = True
-                else:
-                    resp.raise_for_status()
-                    return resp.json()
-            except httpx.HTTPStatusError as exc:
-                raise ProviderError(f"Carnival request {path} failed: {exc}") from exc
-            except (httpx.HTTPError, ValueError) as exc:
-                if self.cf is None or not self.cf.configured:
+            except httpx.HTTPError as exc:
+                if attempt < attempts:
+                    self._sleep(2 ** (attempt - 1))
+                    continue
+                if not cf_ok:
                     raise ProviderError(f"Carnival request {path} failed: {exc}") from exc
                 log.warning("Carnival direct call %s failed (%s); trying Cloudflare browser", path, exc)
+                break
+            status = resp.status_code
+            if status in (401, 403) and cf_ok:
+                log.warning("carnival.com refused %s (%s); switching to Cloudflare browser", path, status)
+                self._blocked = True
+                break
+            if (status == 429 or status >= 500) and attempt < attempts:
+                retry_after = resp.headers.get("retry-after", "")
+                delay = float(retry_after) if retry_after.isdigit() else 2 ** (attempt - 1)
+                self._sleep(min(delay, 30))
+                continue
+            if status == 429 and cf_ok:
+                self._blocked = True
+                break
+            try:
+                resp.raise_for_status()
+                return resp.json()
+            except (httpx.HTTPStatusError, ValueError) as exc:
+                raise ProviderError(f"Carnival request {path} failed: {exc}") from exc
         return self._json_via_browser(method, path, body)
 
     def _json_via_browser(self, method: str, path: str, body: Optional[dict]):
@@ -267,9 +302,13 @@ class CarnivalProvider:
                 research.sources.append(booking_url or f"{self.base_url}/booking")
                 if guests != 2:
                     warnings.append(f"Carnival prices are the average per person for {guests} guests in the room.")
+                if research.staterooms[0].taxes_fees_per_person is None:
+                    warnings.append("Carnival didn't return its taxes breakdown; room prices INCLUDE taxes, fees "
+                                    "and port expenses.")
         except ProviderError as exc:
             log.warning("Carnival stateroom fetch failed: %s", exc)
-            warnings.append(f"Carnival's room picker failed ({exc}); showing search 'from' prices per room type.")
+            warnings.append(f"Carnival's room picker failed ({exc}); showing search 'from' prices per room "
+                            "type, which INCLUDE taxes, fees and port expenses.")
         if not research.staterooms:
             research.staterooms = self.search_rooms(sailing, booking_url or f"{self.base_url}/cruise-search")
 
@@ -400,35 +439,71 @@ class CarnivalProvider:
         if not metas:
             raise ProviderError("no room types returned")
         selected = ((cabin.get("selections") or {}).get("meta") or {}).get("code")
+        tfpe = self.taxes_from_book(first)
         responses = {selected: first} if selected else {}
-        rooms: list[Stateroom] = []
         # Cheapest room type first, matching how advisors read a price sheet.
-        for meta in sorted(metas, key=lambda m: (m.get("price") is None, m.get("price") or 0)):
-            mcode = meta.get("code")
-            resp = responses.get(mcode)
-            if resp is None and not meta.get("isSoldOut"):
-                try:
-                    resp = self._json("POST", "/booking-api/api/v1.0/book",
-                                      self.book_body(sailing_id, sail_date, dur_days, ship_code, guests, mcode))
-                except ProviderError as exc:
-                    log.warning("Carnival room type %s failed: %s", mcode, exc)
-            rooms.extend(self.parse_book_response(resp, meta, source))
+        ordered = sorted(metas, key=lambda m: (m.get("price") is None, m.get("price") or 0))
+        todo = [m.get("code") for m in ordered if m.get("code") not in responses and not m.get("isSoldOut")]
+
+        def fetch(mcode):
+            try:
+                return self._json("POST", "/booking-api/api/v1.0/book",
+                                  self.book_body(sailing_id, sail_date, dur_days, ship_code, guests, mcode))
+            except ProviderError as exc:
+                log.warning("Carnival room type %s failed: %s", mcode, exc)
+                return None
+
+        if todo:
+            with ThreadPoolExecutor(max_workers=min(4, len(todo))) as pool:
+                responses.update(zip(todo, pool.map(fetch, todo)))
+        rooms: list[Stateroom] = []
+        for meta in ordered:
+            rooms.extend(self.parse_book_response(responses.get(meta.get("code")), meta, source, tfpe))
+        # Room-type names are usually unique per ship; add the code where they aren't.
+        counts: dict[str, int] = {}
+        for r in rooms:
+            counts[r.name] = counts.get(r.name, 0) + 1
+        for r in rooms:
+            if counts[r.name] > 1 and r.code:
+                r.name = f"{r.name} ({r.code})"
         return rooms
 
     @staticmethod
-    def parse_book_response(resp: Optional[dict], meta: dict, source: str) -> list[Stateroom]:
+    def taxes_from_book(resp: Optional[dict]) -> Optional[float]:
+        """Taxes, fees and port expenses per person included in Carnival's shown price:
+        the average over guests of cruiseFeesAndExpenses + taxesAndFees."""
+        guests = ((resp or {}).get("cabins") or [{}])[0].get("guestPrices") or []
+        vals = [
+            (g.get("cruiseFeesAndExpenses") or 0) + (g.get("taxesAndFees") or 0)
+            for g in guests
+            if isinstance(g, dict) and (g.get("cruiseFeesAndExpenses") is not None or g.get("taxesAndFees") is not None)
+        ]
+        return round(sum(vals) / len(vals), 2) if vals else None
+
+    @staticmethod
+    def fare(price: Optional[float], tfpe: Optional[float]) -> Optional[float]:
+        """Carnival's all-in price → fare excluding taxes, fees and port expenses."""
+        if price is None or price <= 0:
+            return None
+        if tfpe is None:
+            return float(price)
+        return round(max(price - tfpe, 0.0), 2)
+
+    @staticmethod
+    def parse_book_response(resp: Optional[dict], meta: dict, source: str,
+                            tfpe: Optional[float] = None) -> list[Stateroom]:
         mcode = meta.get("code") or ""
         category = META_CATEGORIES.get(mcode, "Other")
-        taxes = None
+        taxes = CarnivalProvider.taxes_from_book(resp) if resp else None
+        if taxes is None:
+            taxes = tfpe
         types: list[dict] = []
         if resp:
-            if not resp.get("taxesAndFeesIncludedInPrice"):
-                taxes = resp.get("taxesAndFeesPerPerson")
             cabin = (resp.get("cabins") or [{}])[0]
             types = [t for t in ((cabin.get("options") or {}).get("stateroomTypes") or [])
                      if (t.get("metaCode") or mcode) == mcode]
         if not types:  # sold out, or the per-type call failed: keep the room type's "from" price
-            price = None if meta.get("isSoldOut") else meta.get("price")
+            price = None if meta.get("isSoldOut") else CarnivalProvider.fare(meta.get("price"), taxes)
             return [Stateroom(
                 category=category,
                 name=meta.get("name") or mcode,
@@ -447,7 +522,7 @@ class CarnivalProvider:
             if t.get("isGtee"):
                 name = f"{name} (guarantee)"
                 notes.insert(0, "Carnival assigns the stateroom")
-            price = t.get("price")
+            price = CarnivalProvider.fare(t.get("price"), taxes)
             rooms.append(Stateroom(
                 category=category,
                 name=name,
@@ -461,12 +536,12 @@ class CarnivalProvider:
         return rooms
 
     @staticmethod
-    def search_rooms(sailing: dict, source: str) -> list[Stateroom]:
-        """Fallback: the search result's lowest price per room type."""
+    def search_rooms(sailing: dict, source: str, tfpe: Optional[float] = None) -> list[Stateroom]:
+        """Fallback: the search result's lowest price per room type (all-in unless `tfpe` is known)."""
         out = []
         for key, room in (sailing.get("rooms") or {}).items():
-            price = room.get("price") if room.get("price") and not room.get("soldOut") else None
-            tf = room.get("taxesAndFees") or None
+            price = CarnivalProvider.fare(room.get("price"), tfpe) if not room.get("soldOut") else None
+            tf = tfpe
             out.append(Stateroom(
                 category=SEARCH_ROOM_KEYS.get(key, "Other"),
                 name=f"{SEARCH_ROOM_KEYS.get(key, key.title())} (lowest fare)",
@@ -478,6 +553,122 @@ class CarnivalProvider:
                 source=source,
             ))
         return out
+
+    # ── Bulk catalog ─────────────────────────────────────────────────────
+
+    def catalog_ship_codes(self) -> list[str]:
+        """Every ship Carnival's search knows (read from its filter options), else our table."""
+        try:
+            data = self._json("GET", "/cruisesearch/api/search?" + urlencode(
+                {"numAdults": 2, "pageNumber": 1, "pageSize": 1, "currency": "USD", "locality": 1}))
+            codes = [o["code"] for o in ((data.get("options") or {}).get("shipCode") or []) if o.get("code")]
+            if codes:
+                return codes
+        except ProviderError as exc:
+            log.warning("Carnival ship list failed (%s); using the built-in table", exc)
+        return sorted(set(SHIP_CODES.values()))
+
+    def ship_itineraries(self, ship_code: str) -> list[dict]:
+        """All itineraries (each with all its sailings) for one ship. The unfiltered search
+        silently drops ~10% of sailings, so the catalog pages through ship by ship."""
+        out, page, last = [], 1, 1
+        while page <= last and page <= 50:
+            data = self._json("GET", "/cruisesearch/api/search?" + urlencode({
+                "numAdults": 2, "pageNumber": page, "pageSize": 100, "shipCode": ship_code,
+                "currency": "USD", "locality": 1,
+            }))
+            results = data.get("results") or {}
+            out.extend(results.get("itineraries") or [])
+            last = results.get("lastPage") or 1
+            page += 1
+        return out
+
+    def sailing_taxes(self, itin: dict, sailing: dict) -> Optional[float]:
+        """Taxes, fees & port expenses per person for one sailing, from one booking-API call."""
+        try:
+            resp = self._json("POST", "/booking-api/api/v1.0/book", self.book_body(
+                sailing["sailingId"], sailing["departureDate"][:10], itin.get("dur"), itin.get("shipCode"), 2, None))
+        except (ProviderError, KeyError, ValueError, TypeError) as exc:
+            log.info("Carnival taxes lookup failed for sailing %s: %s", sailing.get("sailingId"), exc)
+            return None
+        return self.taxes_from_book(resp)
+
+    def iter_catalog(self, taxes: str = "itinerary", workers: int = 4) -> Iterator[CatalogSailing]:
+        """Every future Carnival sailing with lead-in fares per room class (2 adults).
+
+        Carnival's search prices include taxes, fees and port expenses and the search
+        doesn't say how much they are, so the fare is derived with booking-API calls:
+          taxes="itinerary" (default) — one call per itinerary (ship + route), applied to all
+                                        its sailings; they vary by ~$1 between dates.
+          taxes="sailing"             — one call per sailing (exact, ~6x the calls).
+        If a lookup fails the prices for those sailings stay all-in and
+        taxes_fees_per_person is None.
+        """
+        if taxes not in ("itinerary", "sailing"):
+            raise ValueError("taxes must be 'itinerary' or 'sailing'")
+        ships = self.catalog_ship_codes()
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            per_ship = list(pool.map(self.ship_itineraries, ships))
+
+        seen: set[str] = set()
+        rows: list[tuple[dict, dict]] = []
+        groups: dict[tuple, list[int]] = {}
+        today = self._today().isoformat()
+        for itins in per_ship:
+            for itin in itins:
+                gkey = (itin.get("shipCode"), itin.get("code"), itin.get("departurePortCode"), itin.get("dur"))
+                for sailing in itin.get("sailings") or []:
+                    sid = str(sailing.get("sailingId") or "")
+                    if not sid or sid in seen or (sailing.get("departureDate") or "")[:10] < today:
+                        continue
+                    seen.add(sid)
+                    groups.setdefault(gkey if taxes == "itinerary" else (sid,), []).append(len(rows))
+                    rows.append((itin, sailing))
+
+        def group_taxes(idx: list[int]) -> Optional[float]:
+            # Try up to 3 sailings of the group (the first may be sold out or closed).
+            for i in idx[:3]:
+                t = self.sailing_taxes(*rows[i])
+                if t is not None:
+                    return t
+            return None
+
+        keys = list(groups)
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            tax_by_group = dict(zip(keys, pool.map(lambda k: group_taxes(groups[k]), keys)))
+        tax_by_row: dict[int, Optional[float]] = {}
+        for k, idx in groups.items():
+            for i in idx:
+                tax_by_row[i] = tax_by_group[k]
+
+        for i, (itin, sailing) in enumerate(rows):
+            yield self.catalog_row(itin, sailing, tax_by_row.get(i))
+
+    def catalog_row(self, itin: dict, sailing: dict, tfpe: Optional[float]) -> CatalogSailing:
+        schedule = (itin.get("leadSailing") or {}).get("schedule") or []
+        ports = [re.sub(r"[™®]", "", st.get("port") or "").strip()
+                 for st in schedule[1:-1] if not is_sea_day(st)]
+        prices: dict[str, Optional[float]] = {}
+        currency = "USD"
+        for key, room in (sailing.get("rooms") or {}).items():
+            label = SEARCH_ROOM_KEYS.get(key, key.title())
+            prices[label] = None if room.get("soldOut") else self.fare(room.get("price"), tfpe)
+            currency = room.get("priceCurrency") or currency
+        return CatalogSailing(
+            cruise_line=self.cruise_line,
+            sailing_key=str(sailing["sailingId"]),
+            ship=itin.get("shipName") or itin.get("shipCode") or "",
+            sail_date=sailing["departureDate"][:10],
+            nights=itin.get("dur"),
+            ship_code=itin.get("shipCode"),
+            itinerary_name=itin.get("itineraryTitleFormatted") or itin.get("itineraryTitle"),
+            departure_port=itin.get("departurePortName"),
+            ports=ports,
+            booking_url=self.base_url + sailing["sailingURL"] if sailing.get("sailingURL") else None,
+            prices=prices,
+            taxes_fees_per_person=tfpe,
+            currency=currency,
+        )
 
     # ── Add-ons ──────────────────────────────────────────────────────────
 

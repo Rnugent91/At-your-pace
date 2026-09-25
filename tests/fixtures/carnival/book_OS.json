@@ -87,7 +87,19 @@
       }
      }
     ]
-   }
+   },
+   "guestPrices": [
+    {
+     "price": 741.23,
+     "cruiseFeesAndExpenses": 97.23,
+     "taxesAndFees": 85.77
+    },
+    {
+     "price": 741.23,
+     "cruiseFeesAndExpenses": 97.23,
+     "taxesAndFees": 85.77
+    }
+   ]
   }
  ]
 }
