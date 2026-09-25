@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cruise quote for {{ q.client_name }}</title>
+<style>
+  @font-face { font-family: "Fraunces"; font-weight: 900; src: url("{{ font_uri }}") format("woff2"); }
+  :root { --ink: #16263a; --muted: #5f6b78; --line: #dcd6cb; --accent: #0f5c73; --sand: #f6f1e7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--ink); background: #fff; font: 10.5pt/1.45 "Helvetica Neue", Arial, sans-serif; }
+  .page { max-width: 7.4in; margin: 0 auto; }
+  h1, h2, .brand { font-family: "Fraunces", Georgia, serif; font-weight: 900; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--accent); padding-bottom: 10px; }
+  .brand { font-size: 20pt; color: var(--accent); line-height: 1.1; }
+  .advisor { text-align: right; font-size: 9pt; color: var(--muted); }
+  .advisor strong { color: var(--ink); font-size: 10pt; }
+  .hero { background: var(--sand); border-radius: 8px; padding: 14px 16px; margin: 16px 0 12px; }
+  .hero h1 { margin: 0 0 2px; font-size: 18pt; }
+  .hero .meta { color: var(--muted); }
+  .hero .facts { display: flex; gap: 22px; margin-top: 8px; font-size: 9.5pt; }
+  .hero .facts b { display: block; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  h2 { font-size: 12.5pt; margin: 18px 0 6px; color: var(--accent); }
+  p.intro { font-size: 11pt; margin: 4px 0 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  th, td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .num { text-align: right; white-space: nowrap; }
+  tr.total td { font-weight: 700; border-top: 2px solid var(--ink); border-bottom: none; }
+  .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .option { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; break-inside: avoid; }
+  .option .cat { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .option .name { font-weight: 700; font-size: 11pt; margin-bottom: 4px; }
+  .option table td { border: none; padding: 1px 0; }
+  .option .grand { font-family: "Fraunces", Georgia, serif; font-weight: 900; font-size: 15pt; color: var(--accent); }
+  .service { border-left: 4px solid var(--accent); background: var(--sand); padding: 8px 12px; border-radius: 0 6px 6px 0; break-inside: avoid; }
+  .notes { white-space: pre-line; }
+  .fine { font-size: 8pt; color: var(--muted); margin-top: 18px; border-top: 1px solid var(--line); padding-top: 8px; }
+  .demo { background: #ffe9a8; color: #5a4300; padding: 6px 10px; border-radius: 6px; font-weight: 700; margin-top: 10px; }
+  h2 { break-after: avoid; }
+  tr { break-inside: avoid; }
+</style>
+</head>
+<body>
+<div class="page">
+  {% set cur = r.currency %}
+  <header>
+    <div>
+      <div class="brand">{{ settings.business_name }}</div>
+      {% if settings.business_website %}<div style="font-size:9pt;color:var(--muted)">{{ settings.business_website }}</div>{% endif %}
+    </div>
+    <div class="advisor">
+      {% if settings.advisor_name %}<strong>{{ settings.advisor_name }}</strong><br>{% endif %}
+      {% if settings.advisor_tagline %}{{ settings.advisor_tagline }}<br>{% endif %}
+      {% if settings.advisor_email %}{{ settings.advisor_email }}{% endif %}{% if settings.advisor_email and settings.advisor_phone %} · {% endif %}{% if settings.advisor_phone %}{{ settings.advisor_phone }}{% endif %}
+    </div>
+  </header>
+
+  {% if q.demo %}<div class="demo">SAMPLE QUOTE: prices are made-up demo data.</div>{% endif %}
+
+  <div class="hero">
+    <div class="meta">Cruise quote prepared for {{ q.client_name }}</div>
+    <h1>{{ r.ship }}{% if r.itinerary_name %}: {{ r.itinerary_name }}{% endif %}</h1>
+    <div class="facts">
+      <div><b>Cruise line</b>{{ r.cruise_line }}</div>
+      <div><b>Sails</b>{{ r.sail_date | nice_date }}</div>
+      {% if r.nights %}<div><b>Length</b>{{ r.nights }} nights</div>{% endif %}
+      {% if r.departure_port %}<div><b>From</b>{{ r.departure_port }}</div>{% endif %}
+      <div><b>Guests</b>{{ q.adults }} adult{{ 's' if q.adults != 1 }}{% if q.children %}, {{ q.children }} child{{ 'ren' if q.children != 1 }}{% endif %}</div>
+    </div>
+  </div>
+
+  {% if q.client_intro %}<p class="intro">{{ q.client_intro }}</p>{% endif %}
+
+  {% if r.itinerary %}
+  <section>
+    <h2>Itinerary</h2>
+    <table>
+      <thead><tr><th>Day</th><th>Date</th><th>Port</th><th>Arrive</th><th>Depart</th></tr></thead>
+      <tbody>
+      {% for d in r.itinerary %}
+        <tr><td>{{ d.day }}</td><td>{{ (d.date | short_date) if d.date else '' }}</td><td>{{ d.port }}</td><td>{{ d.arrive or '' }}</td><td>{{ d.depart or '' }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if totals.rooms %}
+  <section>
+    <h2>Stateroom options</h2>
+    <div class="options">
+      {% for o in totals.rooms %}
+      <div class="option">
+        <div class="cat">{{ o.room.category }}</div>
+        <div class="name">{{ o.room.name }}</div>
+        <table>
+          <tr><td>Cruise fare ({{ o.room.price_per_person | money(cur) }} × {{ q.guests }})</td><td class="num">{{ o.fare_total | money(cur) }}</td></tr>
+          {% if o.taxes_total %}<tr><td>Taxes, fees &amp; port expenses</td><td class="num">{{ o.taxes_total | money(cur) }}</td></tr>{% endif %}
+          {% if totals.addons_total %}<tr><td>Selected add-ons</td><td class="num">{{ totals.addons_total | money(cur) }}</td></tr>{% endif %}
+          {% if totals.tracking_fee %}<tr><td>Price tracking service</td><td class="num">{{ totals.tracking_fee | money(cur) }}</td></tr>{% endif %}
+        </table>
+        <div class="grand">{{ o.grand_total | money(cur) }}</div>
+        <div style="font-size:8pt;color:var(--muted)">Estimated total for your party{% if not o.taxes_total %}, before taxes &amp; fees{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if totals.addons %}
+  <section>
+    <h2>Recommended add-ons</h2>
+    <table>
+      <thead><tr><th>Package</th><th class="num">Price</th><th class="num">Quantity</th><th class="num">Total</th></tr></thead>
+      <tbody>
+      {% for line in totals.addons %}
+        <tr>
+          <td>{{ line.addon.name }}{% if line.addon.port %}<br><span style="color:var(--muted);font-size:8.5pt">{{ line.addon.port }}</span>{% endif %}</td>
+          <td class="num">{{ line.addon.price | money(cur) }}<br><span style="color:var(--muted);font-size:8pt">{{ line.addon.unit_label or line.addon.price_unit.replace('_',' ') }}</span></td>
+          <td class="num">{{ line.quantity_label }}</td>
+          <td class="num">{{ line.total | money(cur) }}</td>
+        </tr>
+      {% endfor %}
+        <tr class="total"><td colspan="3">Add-ons total</td><td class="num">{{ totals.addons_total | money(cur) }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if totals.tracking_fee %}
+  <section>
+    <h2>Price tracking service · {{ totals.tracking_fee | money(cur) }}</h2>
+    <div class="service">
+      After you book, we keep watching the price of your cruise fare and the packages above.
+      If a price drops before final payment, we work to get you the lower price or onboard credit, so you don't have to keep checking.
+    </div>
+  </section>
+  {% endif %}
+
+  {% if q.advisor_notes %}
+  <section>
+    <h2>Notes</h2>
+    <div class="notes">{{ q.advisor_notes }}</div>
+  </section>
+  {% endif %}
+
+  <div class="fine">
+    {% if q.valid_until %}Quote valid until {{ q.valid_until | nice_date }}. {% endif %}
+    Prices are in {{ cur }}, per the cruise line's published rates when this quote was prepared, and are subject to availability and change until booked.
+    Fares are shown for {{ q.guests }} guest{{ 's' if q.guests != 1 }} sharing a stateroom. Gratuities are not included unless noted.
+  </div>
+</div>
+</body>
+</html>

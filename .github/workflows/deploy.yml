@@ -1,0 +1,88 @@
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: python -m pytest -q
+
+  # Same server and pattern as Quackport's deploy: rsync, restart the systemd
+  # unit, then fail the run if the site doesn't come back healthy.
+  # Needs repo secrets SSH_HOST, SSH_USER, SSH_PRIVATE_KEY (the same values as
+  # the DuckPassport.Web repo). Skipped until they're added.
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      HAS_SSH: ${{ secrets.SSH_HOST != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.HAS_SSH == 'true'
+
+      - name: Deploy via rsync over SSH
+        if: env.HAS_SSH == 'true'
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          # data/, .venv/ and .browsers/ live only on the server; --delete must never touch them.
+          switches: >-
+            -avz --delete
+            --exclude='.git/'
+            --exclude='.github/'
+            --exclude='tests/'
+            --exclude='.venv/'
+            --exclude='.browsers/'
+            --exclude='data/'
+            --exclude='.env'
+          path: ./
+          remote_path: /var/www/quotes/
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Install dependencies and restart
+        if: env.HAS_SSH == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /var/www/quotes
+            .venv/bin/pip install -q -r requirements.txt
+            systemctl restart quotes
+            for i in $(seq 1 30); do
+              state=$(systemctl is-active quotes || true)
+              if [ "$state" = "active" ]; then break; fi
+              if [ "$state" = "failed" ]; then journalctl -u quotes -n 40 --no-pager; exit 1; fi
+              sleep 1
+            done
+
+      - name: Health check
+        if: env.HAS_SSH == 'true'
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 https://quotes.quackport.com/healthz || echo 000)
+            [ "$code" = "200" ] && echo "healthy" && exit 0
+            sleep 1
+          done
+          echo "::error::quotes.quackport.com/healthz never returned 200 (last $code)"
+          exit 1
+
+      - name: Deploy skipped
+        if: env.HAS_SSH != 'true'
+        run: echo "::notice::Add SSH_HOST, SSH_USER and SSH_PRIVATE_KEY repo secrets to enable deploys."

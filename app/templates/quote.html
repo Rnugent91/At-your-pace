@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}{{ q.client_name }}{% endblock %}
+{% block head %}{% if q.status == "researching" %}<meta http-equiv="refresh" content="5">{% endif %}{% endblock %}
+{% block content %}
+{% set r = q.research %}
+{% set cur = r.currency if r else "USD" %}
+<div class="row">
+  <div>
+    <h1>{{ q.client_name }}</h1>
+    <div class="muted">{{ q.cruise_line }} · {{ q.ship }} · {{ q.sail_date | nice_date }}{% if r and r.nights %} · {{ r.nights }} nights{% endif %}</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill {{ q.status }}">{{ q.status }}</span>
+</div>
+<p></p>
+
+{% if q.status == "researching" %}
+<div class="card row">
+  <div class="spinner"></div>
+  <div>
+    <strong>Pulling prices…</strong>
+    <div class="muted small">Live cruise-line data and web research can take a minute or two. This page refreshes on its own.</div>
+  </div>
+</div>
+{% endif %}
+
+{% if q.error %}
+<div class="warn"><strong>Problem:</strong> {{ q.error }}</div>
+{% endif %}
+
+{% if q.status == "error" or (r and not r.staterooms) %}
+<div class="card">
+  <h2>Try again with the booking page</h2>
+  <p class="muted small">Open the sailing's room-selection page on the cruise line's website, select all (Ctrl+A), copy, and paste it here. Claude will read the prices from it.</p>
+  <form method="post" action="/quotes/{{ q.id }}/retry">
+    <label for="booking_url">Booking page link</label>
+    <input id="booking_url" name="booking_url" type="url" value="{{ q.booking_url }}">
+    <p></p>
+    <label for="pasted_text">Pasted booking page</label>
+    <textarea id="pasted_text" name="pasted_text">{{ q.pasted_text }}</textarea>
+    <p></p>
+    <button class="btn" type="submit">Research again</button>
+  </form>
+</div>
+{% endif %}
+
+{% if r %}
+{% if r.warnings %}
+<div class="warn"><strong>Check before sending</strong>
+  <ul>{% for w in r.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+{% if changes %}
+<div class="card">
+  <h2>Price tracking</h2>
+  <p class="muted small">Changes to quoted items since {{ q.price_history[0].captured_at[:10] }}.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Item</th><th class="num">Quoted</th><th class="num">Now</th><th class="num">Change</th></tr></thead>
+    <tbody>
+    {% for c in changes %}
+      <tr>
+        <td>{{ c.label }}</td><td class="num">{{ c.old | money(cur) }}</td><td class="num">{{ c.new | money(cur) }}</td>
+        <td class="num {{ 'down' if c.dropped else 'up' }}">{{ (c.new - c.old) | money(cur) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<form method="post" action="/quotes/{{ q.id }}" id="saved">
+  <div class="card">
+    <h2>Client &amp; guests</h2>
+    <div class="grid">
+      <div><label for="client_name">Client name</label><input id="client_name" name="client_name" type="text" value="{{ q.client_name }}"></div>
+      <div><label for="client_email">Client email</label><input id="client_email" name="client_email" type="email" value="{{ q.client_email }}"></div>
+      <div><label for="adults">Adults</label><input id="adults" name="adults" type="number" min="1" value="{{ q.adults }}"></div>
+      <div><label for="children">Children</label><input id="children" name="children" type="number" min="0" value="{{ q.children }}"></div>
+      <div><label for="valid_until">Quote valid until</label><input id="valid_until" name="valid_until" type="date" value="{{ q.valid_until }}"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Staterooms</h2>
+    <p class="muted small">Tick the options to show the client. Prices are per person; edit any price to override it.</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Category</th><th>Stateroom</th><th class="num">Per person</th><th class="num">Taxes/fees pp</th><th>Source</th></tr></thead>
+      <tbody>
+      {% for s in r.staterooms %}
+        <tr>
+          <td><input type="checkbox" name="room" value="{{ s.key }}" aria-label="Include {{ s.name }}" {% if s.key in q.selected_staterooms %}checked{% endif %}></td>
+          <td>{{ s.category }}</td>
+          <td>{{ s.name }}{% if s.code %} <span class="muted small">({{ s.code }})</span>{% endif %}{% if s.sold_out %} <span class="pill error">sold out</span>{% endif %}{% if s.notes %}<div class="small muted">{{ s.notes }}</div>{% endif %}</td>
+          <td class="num"><input type="number" step="0.01" min="0" name="room_price_{{ loop.index0 }}" value="{{ s.price_per_person if s.price_per_person is not none else '' }}"></td>
+          <td class="num">{{ s.taxes_fees_per_person | money(cur) }}</td>
+          <td class="small muted">{% if s.source.startswith('http') %}<a href="{{ s.source }}" target="_blank" rel="noopener">link</a>{% else %}{{ s.source }}{% endif %}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="muted">No stateroom prices found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Add-ons</h2>
+    <p class="muted small">Quantity defaults to all guests for every night; change it if only some guests want an add-on.</p>
+    {% set kinds = [("beverage","Beverage packages"),("internet","Wi-Fi"),("dining","Dining"),("excursion","Shore excursions"),("activity","Activities"),("photo","Photo packages"),("other","Other")] %}
+    {% for kind, title in kinds %}
+      {% set items = r.addons | selectattr("kind", "equalto", kind) | list %}
+      {% if items %}
+      <details {% if kind in ("beverage", "internet") or items | selectattr("key", "in", chosen_addons) | list %}open{% endif %}>
+        <summary>{{ title }} ({{ items | length }})</summary>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Item</th><th class="num">Price</th><th>Unit</th><th class="num">Qty</th></tr></thead>
+          <tbody>
+          {% for a in r.addons %}{% if a.kind == kind %}
+            {% set i = loop.index0 %}
+            <tr>
+              <td><input type="checkbox" name="addon_{{ i }}" aria-label="Include {{ a.name }}" {% if a.key in chosen_addons %}checked{% endif %}></td>
+              <td>{{ a.name }}{% if a.port %}<div class="small muted">{{ a.port }}</div>{% endif %}{% if a.description %}<div class="small muted">{{ a.description }}</div>{% endif %}</td>
+              <td class="num">{{ a.price | money(cur) }}</td>
+              <td class="small">{{ a.unit_label or a.price_unit.replace('_', ' ') }}</td>
+              <td class="num"><input type="number" step="1" min="0" name="qty_{{ i }}" placeholder="{{ '%g' % default_qty(a) }}" value="{{ '%g' % chosen_addons[a.key] if chosen_addons.get(a.key) is not none else '' }}"></td>
+            </tr>
+          {% endif %}{% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </details>
+      {% endif %}
+    {% else %}
+      <p class="muted">No add-ons found.</p>
+    {% endfor %}
+  </div>
+
+  <div class="card" id="intro">
+    <h2>Services &amp; message</h2>
+    <div class="grid">
+      <div><label class="check"><input type="checkbox" name="tracking_enabled" {% if q.tracking_enabled %}checked{% endif %}> Price tracking service</label></div>
+      <div><label for="tracking_fee">Tracking fee</label><input id="tracking_fee" name="tracking_fee" type="number" min="0" step="0.01" value="{{ q.tracking_fee }}"></div>
+    </div>
+    <p></p>
+    <label for="client_intro">Opening note</label>
+    <textarea id="client_intro" name="client_intro" placeholder="A short personal note at the top of the quote.">{{ q.client_intro }}</textarea>
+    <p></p>
+    <label for="advisor_notes">Notes &amp; terms</label>
+    <textarea id="advisor_notes" name="advisor_notes">{{ q.advisor_notes }}</textarea>
+  </div>
+
+  <div class="card">
+    <h2>Totals</h2>
+    {% if totals.rooms %}
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Option</th><th class="num">Cruise fare</th><th class="num">Taxes/fees</th><th class="num">Add-ons</th><th class="num">Tracking</th><th class="num">Total</th></tr></thead>
+      <tbody>
+      {% for o in totals.rooms %}
+        <tr><td>{{ o.room.name }}</td><td class="num">{{ o.fare_total | money(cur) }}</td><td class="num">{{ o.taxes_total | money(cur) }}</td>
+        <td class="num">{{ totals.addons_total | money(cur) }}</td><td class="num">{{ totals.tracking_fee | money(cur) }}</td>
+        <td class="num"><strong>{{ o.grand_total | money(cur) }}</strong></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="muted">Select at least one stateroom with a price.</p>
+    {% endif %}
+    <p class="small muted">Totals update after you save. Sources: {{ r.sources | join(", ") }} · via {{ q.provider }}</p>
+  </div>
+
+  <div class="sticky-actions row">
+    <button class="btn" type="submit">Save</button>
+    <a class="btn ghost" href="/quotes/{{ q.id }}/preview" target="_blank">Preview</a>
+    <a class="btn ghost" href="/quotes/{{ q.id }}/pdf">Download PDF</a>
+    <div class="spacer"></div>
+  </div>
+</form>
+
+<p></p>
+<div class="row">
+  {% if claude_ready %}
+  <form class="inline" method="post" action="/quotes/{{ q.id }}/intro"><button class="btn ghost" type="submit">Draft opening note with Claude</button></form>
+  {% endif %}
+  <form class="inline" method="post" action="/quotes/{{ q.id }}/recheck"><button class="btn ghost" type="submit">Re-check prices</button></form>
+  <div class="spacer"></div>
+  <form class="inline" method="post" action="/quotes/{{ q.id }}/delete" onsubmit="return confirm('Delete this quote?')"><button class="btn danger" type="submit">Delete</button></form>
+</div>
+<p class="small muted">Save your edits before drafting the note or re-checking prices.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}All quotes{% endblock %}
+{% block content %}
+<h1>Quotes</h1>
+<p class="muted">Build a quote by entering a cruise line, ship and sail date. Prices are pulled automatically for you to review.</p>
+<div class="card table-wrap">
+  {% if quotes %}
+  <table>
+    <thead><tr><th>Client</th><th>Sailing</th><th>Guests</th><th>Status</th><th>Created</th></tr></thead>
+    <tbody>
+    {% for q in quotes %}
+      <tr>
+        <td><a href="/quotes/{{ q.id }}">{{ q.client_name }}</a></td>
+        <td>{{ q.cruise_line }} · {{ q.ship }}<br><span class="small muted">{{ q.sail_date | nice_date }}</span></td>
+        <td>{{ q.adults }}{% if q.children %} + {{ q.children }}{% endif %}</td>
+        <td><span class="pill {{ q.status }}">{{ q.status }}</span>{% if q.demo %} <span class="pill">demo</span>{% endif %}</td>
+        <td class="small muted">{{ q.created_at[:10] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No quotes yet. <a href="/quotes/new">Create the first one.</a></p>
+  {% endif %}
+</div>
+{% endblock %}
