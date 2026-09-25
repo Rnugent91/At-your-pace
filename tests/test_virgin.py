@@ -1,5 +1,6 @@
 """Virgin Voyages provider tests. Fixtures are trimmed captures of Virgin's
-bookvoyage-bff / GraphQL responses (Sept 2026); nothing here touches the network."""
+bookvoyage-bff / GraphQL / Shore Things explorer responses (Sept 2026); nothing
+here touches the network."""
 
 import json
 from datetime import date
@@ -11,6 +12,7 @@ import pytest
 
 from app.cf_browser import CloudflareBrowser
 from app.providers.base import ProviderError, ResearchRequest
+from app.providers import virgin
 from app.providers.virgin import (
     VirginVoyagesProvider,
     parse_voyage_id,
@@ -21,6 +23,14 @@ from app.providers.virgin import (
 )
 
 FIX = Path(__file__).parent / "fixtures" / "virgin"
+STT_ID = "768de778-b9d5-4728-b332-46e66f091259"  # St. Thomas in the Shore Things port map
+
+
+@pytest.fixture(autouse=True)
+def fresh_port_map():
+    virgin._PORT_IDS.clear()
+    yield
+    virgin._PORT_IDS.clear()
 
 
 def fx(name: str) -> dict:
@@ -30,9 +40,12 @@ def fx(name: str) -> dict:
 class VirginApi:
     """A fake Virgin API backed by the fixtures; records every request."""
 
-    def __init__(self, status: int = 200, cabin_status: int = 200, throttle: int = 0):
+    def __init__(self, status: int = 200, cabin_status: int = 200, throttle: int = 0, addon_status: int = 200,
+                 site_status: int = 200):
         self.status = status
         self.cabin_status = cabin_status
+        self.addon_status = addon_status
+        self.site_status = site_status  # the public www.virginvoyages.com pages / dream-api
         self.throttle = throttle  # answer this many requests with 429 first
         self.requests: list[httpx.Request] = []
 
@@ -41,6 +54,17 @@ class VirginApi:
         url = str(request.url)
         if url.endswith("/book/api/auth?tokenType=guest"):
             return httpx.Response(200, json={"access_token": "tok", "expires_in": 3600})
+        if url.startswith("https://www.virginvoyages.com/"):  # public site: no token needed
+            if self.site_status != 200:
+                return httpx.Response(self.site_status, text="down")
+            if url == "https://www.virginvoyages.com/shore-excursions":
+                return httpx.Response(200, text=(FIX / "shore_excursions_page.html").read_text(encoding="utf-8"))
+            if "/dream-api/v1/data/shore-things/explorer" in url:
+                assert request.url.params["currencyCode"] == "USD"
+                if request.url.params["portId"] == STT_ID:
+                    return httpx.Response(200, json=fx("shore_things_STT.json"))
+                return httpx.Response(200, json=[])
+            raise AssertionError(url)
         assert request.headers["authorization"] == "bearer tok"
         if self.throttle:
             self.throttle -= 1
@@ -59,8 +83,14 @@ class VirginApi:
         if url.endswith("/graphql"):
             if self.cabin_status != 200:
                 return httpx.Response(self.cabin_status, text="nope")
-            value = json.loads(request.content)["variables"]["value"]
+            body = json.loads(request.content)
+            value = body["variables"]["value"]
             assert value["cabins"][0]["travelParty"] == [{"ageCategory": "ADULT", "count": 2}]
+            if "addOnAvailability" in body["query"]:
+                if self.addon_status != 200:
+                    return httpx.Response(self.addon_status, text="nope")
+                assert value["voyageId"] == "SC2803117NSJRP" and value["cabins"][0]["categoryCode"] == "IZ"
+                return httpx.Response(200, json=fx("addon_availability.json"))
             return httpx.Response(200, json=fx("cabin_categories.json"))
         raise AssertionError(url)
 
@@ -124,9 +154,68 @@ def test_research_room_types_and_itinerary():
     # Solo / Social cabins (unavailable for two) and code-less entries are left out.
     assert not {"I1", "I4", "V1", "TS"} & set(rooms)
     assert all(not x.sold_out for x in r.staterooms)
-    assert any("Wi-Fi" in w and "gratuities" in w and "Bar Tab" in w for w in r.warnings)
+    assert any("Wi-Fi" in w and "gratuity" in w and "Bar Tab" in w for w in r.warnings)
     assert r.sources[0].startswith("https://www.virginvoyages.com/book/voyage-planner/choose-a-cabin?")
     assert api.paths("/auth") == 1  # the guest token is reused
+
+
+def test_research_addons():
+    api = VirginApi()
+    r = provider(api).research(req())
+    kinds = {}
+    for a in r.addons:
+        kinds.setdefault(a.kind, []).append(a)
+    assert set(kinds) == {"beverage", "other", "excursion", "internet", "activity"}
+
+    tabs = {a.name: a for a in kinds["beverage"]}
+    assert [a.price for a in kinds["beverage"]] == [200, 300, 500, 750, 1000]
+    tab = tabs["$500 Bar Tab + $100 Credit"]
+    assert (tab.price_unit, tab.port) == ("per_person", None)  # per Sailor; the API's totalAmount is the cabin
+    assert "Soda, water" in tab.description and "$100 bar bonus" in tab.description
+
+    other = {a.name: a for a in kinds["other"]}
+    grat = other["Prepaid service gratuities"]
+    assert (grat.price, grat.price_unit) == (140.0, "per_person")
+    assert "$20" in grat.unit_label and "$22" in grat.description
+    vp = other["Voyage Protection"]
+    assert (vp.price, vp.price_unit) == (76.0, "per_person") and "(IZ)" in vp.description
+
+    tours = kinds["excursion"]
+    assert [(a.name, a.price, a.port) for a in tours] == [
+        ("Ambulatory Accessible St. Thomas Island Tour", 90.0, "Charlotte Amalie, St. Thomas"),
+        ("Adventure Turbo Cat Snorkel & Beach Break", 115.0, "Charlotte Amalie, St. Thomas"),
+        ("BOSS Underwater Adventure", 140.0, "Charlotte Amalie, St. Thomas"),
+    ]
+    assert all(a.price_unit == "per_person" and "not date-specific" in a.description for a in tours)
+    assert tours[0].source.endswith("shoreThingId=" + fx("shore_things_STT.json")[1]["externalId"])
+    assert "accessible" in tours[0].description
+
+    assert kinds["internet"][0].price is None and "Basic (1 device)" in kinds["internet"][0].description
+    assert kinds["activity"][0].price is None and "Thermal" in kinds["activity"][0].name
+
+    # Ports of call only (not the San Juan turnaround) that are in the port map; the map is read once.
+    assert api.paths("/shore-excursions") == 1
+    assert api.paths("/shore-things/explorer") == 2
+    assert any("published 'from' prices" in w for w in r.warnings)
+    # Only St. Thomas and Barbados are in the trimmed port map; Barbados has no tours in the fake.
+    assert any(w.startswith("No Shore Things listed") and "Bridgetown" in w and "Roseau" in w for w in r.warnings)
+    assert any("$22 per Sailor" in w for w in r.warnings)
+    assert VirginVoyagesProvider.included_addon_kinds == ("internet", "dining")
+
+
+def test_addon_failures_never_fail_research():
+    r = provider(VirginApi(addon_status=500, site_status=500)).research(req())
+    assert r.staterooms and r.itinerary
+    assert {a.kind for a in r.addons} == {"internet", "activity"}  # the unpriced onboard extras remain
+    assert any("Bar Tab / gratuity add-ons could not be loaded" in w for w in r.warnings)
+    assert any("Shore Things could not be loaded" in w for w in r.warnings)
+
+
+def test_parse_port_ids():
+    html = (FIX / "shore_excursions_page.html").read_text(encoding="utf-8")
+    ids = VirginVoyagesProvider.parse_port_ids(html)
+    assert ids["STT"] == STT_ID and set(ids) >= {"STT", "BGI"}
+    assert VirginVoyagesProvider.parse_port_ids("<html></html>") == {}
 
 
 def test_research_from_booking_url_overrides_ship_and_date():
@@ -176,6 +265,8 @@ class FakeBrowser(CloudflareBrowser):
             data = fx("voyages_search.json")
         elif "/sailings?" in script:
             data = fx("sailing_details.json")
+        elif "addOnAvailability" in script:
+            data = fx("addon_availability.json")
         else:
             data = fx("cabin_categories.json")
         return f'<html><body><div id="vv-json" data-json="{quote(json.dumps(data))}"></div></body></html>'
@@ -184,7 +275,8 @@ class FakeBrowser(CloudflareBrowser):
 def test_browser_fallback_when_blocked():
     cf = FakeBrowser()
     r = provider(VirginApi(status=403), cf).research(req())
-    assert len(cf.payloads) == 3
+    assert any(a.kind == "beverage" for a in r.addons)
+    assert len(cf.payloads) == 4  # search, itinerary, cabins, add-ons
     assert cf.payloads[0]["url"].startswith("https://www.virginvoyages.com/book/")
     assert {x.code for x in r.staterooms} >= {"IZ", "VZ", "TZ", "SS"}
 

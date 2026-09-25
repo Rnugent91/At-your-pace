@@ -12,6 +12,14 @@ usable with the anonymous *guest* token the site hands every visitor:
   * stateroom fares  — POST https://prod.virginvoyages.com/graphql
                        (CabinCategoriesAvailability: every cabin category with
                        Base / Essential / Premium fare totals for the party)
+  * booking add-ons  — POST https://prod.virginvoyages.com/graphql
+                       (addOnAvailability, the booking flow's "Add-ons" step: Bar Tab
+                       tiers, prepaid service gratuities, Voyage Protection — priced
+                       for this voyage and cabin)
+  * Shore Things     — GET  https://www.virginvoyages.com/dream-api/v1/data/shore-things/explorer
+                       ?currencyCode=USD&portId=<port uuid> (the public excursion
+                       explorer: every tour at a port with its published "from" price;
+                       port code → uuid comes from the /shore-excursions page)
 
 One voyage search over a wide date range returns every bookable sailing of the
 line (~420 in Sept 2026) in a single ~2s call; the catalog then makes one fast
@@ -39,7 +47,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from ..cf_browser import USER_AGENT, BrowserRenderingError, CloudflareBrowser
-from ..models import ItineraryDay, SailingResearch, Stateroom
+from ..models import AddOn, ItineraryDay, SailingResearch, Stateroom
 from .base import CatalogSailing, ProviderError, ResearchRequest
 
 log = logging.getLogger(__name__)
@@ -79,10 +87,39 @@ FARE_CLASS_WARNING = (
 )
 
 INCLUDED_NOTE = (
-    "Virgin Voyages fares include basic Wi-Fi, all restaurants, basic drinks (soda, still/sparkling "
-    "water, coffee/tea), group fitness, entertainment and crew gratuities. Alcohol is extra: a prepaid "
-    "Bar Tab is an optional add-on (not priced by the live integration)."
+    "Virgin Voyages fares include Wi-Fi (Basic on Base/Lock It In fares, better tiers on Essential, "
+    "Premium and suite fares), all 20+ restaurants, basic drinks (soda, still/sparkling water, "
+    "drip coffee/tea), group fitness and entertainment. Not included: alcohol and specialty drinks "
+    "(a prepaid Bar Tab earns bonus credit), Shore Things, spa, Wi-Fi upgrades, and — for bookings "
+    "made since 7 Oct 2025 — a daily service gratuity of $22 per Sailor charged onboard ($20/night if prepaid)."
 )
+
+SHORE_THINGS_WARNING = (
+    "Shore Things prices are Virgin's published 'from' prices per Sailor for each port, not quoted for "
+    "this specific date — confirm in the Sailor App or with Virgin before booking."
+)
+
+UNPRICED_EXTRAS_NOTE = (
+    "Wi-Fi upgrades (Premium / Work from Sea) and Thermal Suite day passes are sold onboard in the "
+    "Sailor App; Virgin doesn't publish their prices, so they're listed without one."
+)
+
+EXPLORER_URL = f"{SITE}/dream-api/v1/data/shore-things/explorer"
+SHORE_THINGS_PAGE = f"{SITE}/shore-excursions"  # embeds the port code → port id map
+_PORT_IDS: dict[str, str] = {}  # process-wide cache of that map
+
+ADDON_QUERY = """
+query ($value: AddonAvailabilityRequest) {
+  addOnAvailability(value: $value) {
+    cabinSeqNo
+    addOns {
+      name longName code addonType category subtitle shortDescription
+      isPerSailorPurchase sellType hideOnAddonPage
+      addOnDetails { code category type name price { amount totalAmount currencyCode } }
+    }
+  }
+}
+"""
 
 # CatalogSailing.prices class names, in display order.
 CATALOG_CLASSES = ("Interior", "Ocean View", "Balcony", "Suite")
@@ -198,9 +235,16 @@ def _amount(price: Optional[dict]) -> Optional[float]:
     return float(value) if value is not None else None
 
 
+def _flag(value: Any) -> bool:
+    """Virgin's APIs send booleans both as JSON booleans and as the strings "true"/"false"."""
+    return value.strip().lower() == "true" if isinstance(value, str) else bool(value)
+
+
 class VirginVoyagesProvider:
     name = "Virgin Voyages (live)"
     cruise_line = "Virgin Voyages"
+    # Every Virgin fare includes Wi-Fi and all restaurants, so web research isn't asked to price them.
+    included_addon_kinds = ("internet", "dining")
 
     def __init__(self, cf: Optional[CloudflareBrowser] = None, http: Optional[httpx.Client] = None):
         self.cf = cf
@@ -275,11 +319,34 @@ class VirginVoyagesProvider:
         start = sailing.get("startingPrice") or {}
         tax = start.get("taxAmount")
         tax_pp = round(float(tax) / sailors, 2) if tax is not None else None
-        try:
-            categories = self.fetch_cabin_categories(voyage_id, sailors)
-            research.staterooms = self.map_staterooms(categories, sailors, tax_pp, booking_url)
-        except ProviderError as exc:
-            warnings.append(f"Stateroom prices could not be loaded from Virgin Voyages: {exc}")
+        call_ports = self.call_port_codes(ports)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            # Shore Things don't depend on the cabin, so fetch them while the cabins load.
+            shore = pool.submit(self.fetch_shore_things, call_ports)
+            try:
+                categories = self.fetch_cabin_categories(voyage_id, sailors)
+                research.staterooms = self.map_staterooms(categories, sailors, tax_pp, booking_url)
+            except ProviderError as exc:
+                warnings.append(f"Stateroom prices could not be loaded from Virgin Voyages: {exc}")
+            priced = [r for r in research.staterooms if r.price_per_person is not None]
+            lead = min(priced, key=lambda r: r.price_per_person).code if priced else None
+            try:
+                research.addons += self.fetch_booking_addons(voyage_id, lead, sailors, booking_url)
+            except ProviderError as exc:
+                warnings.append(f"Virgin Bar Tab / gratuity add-ons could not be loaded: {exc}")
+            try:
+                excursions, missing = shore.result()
+                research.addons += excursions
+                if excursions:
+                    warnings.append(SHORE_THINGS_WARNING)
+                if missing:
+                    warnings.append("No Shore Things listed by Virgin for: " + ", ".join(missing) + ".")
+            except ProviderError as exc:
+                warnings.append(f"Virgin Shore Things could not be loaded: {exc}")
+        research.addons += self.onboard_extras()
+        warnings.append(UNPRICED_EXTRAS_NOTE)
+        if call_ports:
+            research.sources.append(SHORE_THINGS_PAGE)
         if any(r.notes and "Premium fare" in r.notes for r in research.staterooms):
             warnings.append(FARE_CLASS_WARNING)
         if research.staterooms and tax_pp is not None:
@@ -609,3 +676,270 @@ class VirginVoyagesProvider:
         with ThreadPoolExecutor(max_workers=workers) as pool:
             for sailing, cats in zip(ordered, pool.map(cabins, ordered)):
                 yield self.catalog_row(sailing, cats)
+
+    # ── Add-ons ──────────────────────────────────────────────────────────
+
+    def fetch_booking_addons(
+        self, voyage_id: str, category_code: Optional[str], sailors: int, source: str
+    ) -> list[AddOn]:
+        """The booking flow's add-ons (Bar Tabs, prepaid gratuities, Voyage Protection) for this voyage."""
+        cabin: dict = {"cabinSeqNo": 1, "travelParty": [{"ageCategory": "ADULT", "count": sailors}]}
+        if category_code:
+            cabin["categoryCode"] = category_code
+        body = {
+            "query": ADDON_QUERY,
+            "variables": {
+                "value": {"accessKeys": [], "cabins": [cabin], "currencyCode": "USD", "voyageId": voyage_id}
+            },
+        }
+        data = self._request("POST", GRAPHQL_URL, body=body)
+        if data.get("errors") and not data.get("data"):
+            raise ProviderError(f"add-on availability error: {str(data['errors'])[:200]}")
+        cabins = (data.get("data") or {}).get("addOnAvailability") or []
+        items = (cabins[0].get("addOns") if cabins else None) or []
+        return self.map_booking_addons(items, category_code, source)
+
+    @staticmethod
+    def map_booking_addons(items: list[dict], category_code: Optional[str], source: str) -> list[AddOn]:
+        out: list[AddOn] = []
+        for a in items:
+            if _flag(a.get("hideOnAddonPage")):
+                continue
+            det = a.get("addOnDetails") or {}
+            if isinstance(det, list):
+                det = det[0] if det else {}
+            price = (det.get("price") or {}).get("amount")  # per Sailor; totalAmount is for the cabin
+            price = float(price) if price is not None else None
+            kind_code = (det.get("category") or a.get("addonType") or "").upper()
+            name = (a.get("name") or det.get("name") or a.get("code") or "").strip()
+            sub = (a.get("subtitle") or "").strip()
+            if kind_code == "BAR TAB" or (a.get("addonType") or "").lower() == "bar":
+                out.append(
+                    AddOn(
+                        kind="beverage",
+                        name=name,
+                        price=price,
+                        price_unit="per_person",
+                        unit_label="per Sailor, per voyage (pre-voyage only)",
+                        port=None,
+                        description=(
+                            f"Prepaid onboard credit for drinks{': ' + sub if sub else ''}. Soda, water, drip "
+                            "coffee and tea are already included in the fare; bar prices already include the tip "
+                            "(no extra service charge). Buy up to 24 h before sailing; non-refundable once sailing."
+                        ),
+                        source=source,
+                    )
+                )
+            elif "GRATUIT" in (a.get("code") or "").upper() or det.get("type") == "SRV CHARGES":
+                out.append(
+                    AddOn(
+                        kind="other",
+                        name="Prepaid service gratuities",
+                        price=price,
+                        price_unit="per_person",
+                        unit_label="per Sailor, whole voyage ($20 per night prepaid)",
+                        port=None,
+                        description=(
+                            "Virgin's only tip: a daily service gratuity for bookings made since 7 Oct 2025. "
+                            "Prepaid it's $20 per Sailor per night (non-refundable); otherwise $22 per Sailor per "
+                            "day is added onboard. No extra gratuities on drinks, spa or dining."
+                        ),
+                        source=source,
+                    )
+                )
+            elif det.get("category") == "INSURANCE" or a.get("code") == "VP":
+                out.append(
+                    AddOn(
+                        kind="other",
+                        name=name or "Voyage Protection",
+                        price=price,
+                        price_unit="per_person",
+                        unit_label="per Sailor",
+                        port=None,
+                        description=(
+                            f"{sub + '. ' if sub else ''}Priced for the lead-in cabin"
+                            f"{' (' + category_code + ')' if category_code else ''}; the premium rises with the cabin fare."
+                        ),
+                        source=source,
+                    )
+                )
+            else:
+                out.append(
+                    AddOn(
+                        kind="other",
+                        name=name,
+                        price=price,
+                        price_unit="per_person" if _flag(a.get("isPerSailorPurchase")) else "flat",
+                        unit_label="per Sailor" if _flag(a.get("isPerSailorPurchase")) else "per cabin",
+                        port=None,
+                        description=sub or None,
+                        source=source,
+                    )
+                )
+        return sorted(out, key=lambda x: (x.kind != "beverage", x.kind, x.price or 0))
+
+    @staticmethod
+    def call_port_codes(search_ports: list[dict]) -> list[tuple[str, str]]:
+        """(code, name) of each port of call — embarkation/debarkation days left out, no repeats."""
+        ports = sorted((p for p in search_ports if p.get("code")), key=lambda p: int(p.get("day") or 0))
+        out: list[tuple[str, str]] = []
+        for p in ports[1:-1]:
+            code = p["code"].strip().upper()
+            if code not in {c for c, _ in out}:
+                out.append((code, (p.get("name") or code).strip()))
+        return out
+
+    def _site_get(self, url: str, params: Optional[dict] = None) -> httpx.Response:
+        for attempt in range(3):
+            self.calls += 1
+            try:
+                resp = self.http.get(url, params=params, headers={"referer": SHORE_THINGS_PAGE})
+            except httpx.HTTPError as exc:
+                if attempt == 2:
+                    raise ProviderError(f"{url} failed ({exc})") from exc
+                time.sleep(1 + attempt)
+                continue
+            if resp.status_code in (429, 502, 503, 504) and attempt < 2:
+                time.sleep(2.0 * (attempt + 1))
+                continue
+            if resp.status_code >= 400:
+                raise ProviderError(f"{url} answered HTTP {resp.status_code}")
+            return resp
+        raise ProviderError(f"{url} kept failing")
+
+    def port_ids(self) -> dict[str, str]:
+        """Port code → Shore Things port id, read from the /shore-excursions page (cached)."""
+        if not _PORT_IDS:
+            html = self._site_get(SHORE_THINGS_PAGE).text
+            _PORT_IDS.update(self.parse_port_ids(html))
+            if not _PORT_IDS:
+                raise ProviderError("couldn't find the port list on the Shore Things page")
+        return _PORT_IDS
+
+    @staticmethod
+    def parse_port_ids(html: str) -> dict[str, str]:
+        # Next.js streams page data as escaped JSON strings inside self.__next_f.push([1,"..."]).
+        chunks = re.findall(r'self\.__next_f\.push\(\[1,"(.*?)"\]\)</script>', html, re.S)
+        text = ""
+        for c in chunks:
+            try:
+                text += json.loads(f'"{c}"')
+            except ValueError:
+                continue
+        key = '"portCodesMapping":'
+        i = text.find(key)
+        if i < 0:
+            return {}
+        try:
+            mapping, _ = json.JSONDecoder().raw_decode(text[i + len(key):])
+        except ValueError:
+            return {}
+        return {code.upper(): v["id"] for code, v in mapping.items() if isinstance(v, dict) and v.get("id")}
+
+    def fetch_port_shore_things(self, port_id: str) -> list[dict]:
+        resp = self._site_get(EXPLORER_URL, {"currencyCode": "USD", "portId": port_id})
+        try:
+            data = resp.json() if resp.content.strip() else []
+        except ValueError as exc:
+            raise ProviderError("Shore Things explorer returned non-JSON") from exc
+        return data if isinstance(data, list) else []
+
+    def fetch_shore_things(self, ports: list[tuple[str, str]]) -> tuple[list[AddOn], list[str]]:
+        """Shore Things for each port of call; also returns the ports Virgin lists none for."""
+        if not ports:
+            return [], []
+        ids = self.port_ids()
+        wanted = [(code, name, ids.get(code)) for code, name in ports]
+
+        def one(item: tuple[str, str, Optional[str]]) -> Optional[list[dict]]:
+            code, name, pid = item
+            if not pid:
+                return []
+            try:
+                return self.fetch_port_shore_things(pid)
+            except ProviderError as exc:
+                log.warning("Virgin Shore Things failed for %s: %s", code, exc)
+                return None
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(one, wanted))
+        addons: list[AddOn] = []
+        missing: list[str] = []
+        for (code, name, _), tours in zip(wanted, results):
+            mapped = self.map_shore_things(tours or [], name)
+            if not mapped:
+                missing.append(name)
+            addons += mapped
+        if all(r is None for r in results):
+            raise ProviderError("the Shore Things explorer didn't answer")
+        return addons, missing
+
+    @staticmethod
+    def map_shore_things(tours: list[dict], port_name: str) -> list[AddOn]:
+        out = []
+        for t in tours:
+            info = t.get("activityInfo") or {}
+            try:
+                price = float(info.get("price")) if info.get("price") not in (None, "") else None
+            except (TypeError, ValueError):
+                price = None
+            name = (t.get("name") or "").strip()
+            if not name:
+                continue
+            bits = []
+            mins = info.get("durationMins")
+            if mins:
+                bits.append(f"{mins / 60:g} hours")
+            if info.get("energyLevel"):
+                bits.append(f"energy: {str(info['energyLevel']).title()}")
+            if _flag(t.get("isAccessible")):
+                bits.append("accessible")
+            desc = (t.get("shortDescription") or t.get("introduction") or "").strip()
+            out.append(
+                AddOn(
+                    kind="excursion",
+                    name=name,
+                    price=price if price and price > 0 else None,
+                    price_unit="per_person",
+                    unit_label="from, per Sailor",
+                    port=port_name,
+                    description=" · ".join(x for x in [desc, ", ".join(bits)] if x)
+                    + " (published 'from' price, not date-specific)",
+                    source=f"{SITE}/shore-thing?shoreThingId={t.get('externalId') or ''}",
+                )
+            )
+        return sorted(out, key=lambda a: (a.price is None, a.price or 0))
+
+    @staticmethod
+    def onboard_extras() -> list[AddOn]:
+        """Extras Virgin sells only onboard, without published prices."""
+        src = f"{SITE}/faq/the-days-at-sea/wifi"
+        return [
+            AddOn(
+                kind="internet",
+                name="Premium or Work from Sea Wi-Fi upgrade",
+                price=None,
+                price_unit="per_person",
+                unit_label="per Sailor (bought onboard)",
+                port=None,
+                description=(
+                    "Wi-Fi is included: Basic (1 device) on Base/Lock It In fares, Classic on Essential and "
+                    "RockStar suites, Premium (2 devices) on the Premium fare, Work from Sea on Mega RockStar. "
+                    "Upgrades are bought onboard in the Sailor App; Virgin doesn't publish the price."
+                ),
+                source=src,
+            ),
+            AddOn(
+                kind="activity",
+                name="Redemption Spa Thermal Suite day pass",
+                price=None,
+                price_unit="per_person",
+                unit_label="per Sailor, per day (bought onboard)",
+                port=None,
+                description=(
+                    "Mud room, salt room, sauna, steam, hot/cold plunge pools and hammam benches. Sold onboard; "
+                    "Virgin doesn't publish the price. No extra gratuity is added to spa services."
+                ),
+                source=f"{SITE}/fitness-spa",
+            ),
+        ]

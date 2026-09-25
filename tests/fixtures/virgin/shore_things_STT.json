@@ -1,0 +1,53 @@
+[
+ {
+  "name": "Adventure Turbo Cat Snorkel & Beach Break",
+  "externalId": "STTBCH00002",
+  "shortDescription": "Sail, swim, and relax",
+  "activityInfo": {
+   "type": "STTBCH00002",
+   "price": "115",
+   "currency": "USD",
+   "durationMins": 210,
+   "energyLevel": "MODERATE",
+   "experienceType": [
+    "ENERGETIC"
+   ]
+  },
+  "isAccessible": false,
+  "newTour": false
+ },
+ {
+  "name": "Ambulatory Accessible St. Thomas Island Tour",
+  "externalId": "STTACC00002",
+  "shortDescription": "A scenic drive through St. Thomas",
+  "activityInfo": {
+   "type": "STTACC00002",
+   "price": "90",
+   "currency": "USD",
+   "durationMins": 150,
+   "energyLevel": "EASY",
+   "experienceType": [
+    "RELAXING"
+   ]
+  },
+  "isAccessible": true,
+  "newTour": false
+ },
+ {
+  "name": "BOSS Underwater Adventure",
+  "externalId": "STTH2O00004",
+  "shortDescription": "Ride an underwater motor scooter",
+  "activityInfo": {
+   "type": "STTH2O00004",
+   "price": "140",
+   "currency": "USD",
+   "durationMins": 210,
+   "energyLevel": "MODERATE",
+   "experienceType": [
+    "ENERGETIC"
+   ]
+  },
+  "isAccessible": false,
+  "newTour": false
+ }
+]

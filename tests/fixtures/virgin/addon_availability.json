@@ -1,0 +1,240 @@
+{
+ "data": {
+  "addOnAvailability": [
+   {
+    "cabinSeqNo": 1,
+    "addOns": [
+     {
+      "shortDescription": "Drinks and more, pre-voyage only offer",
+      "addonType": "bar",
+      "name": "$200 Bar Tab + $25 Credit",
+      "longName": "Bar Tab",
+      "code": "BSL 200",
+      "subtitle": "Plus a $25 bar bonus on us",
+      "category": " PLUS $25 BAR BONUS",
+      "isPerSailorPurchase": "true",
+      "maximumQuantity": null,
+      "highlightPillLabel": null,
+      "bookingSortPriority": "2",
+      "sellType": "perSailor",
+      "hideOnAddonPage": "false",
+      "addOnDetails": {
+       "code": "BSL 200",
+       "category": "BAR TAB",
+       "type": "SAILOR LOOT",
+       "name": "Bar Tab $200",
+       "associationType": "GUEST",
+       "classifications": [
+        "BOOK",
+        "CANCEL",
+        "SHOW"
+       ],
+       "price": {
+        "amount": 200,
+        "totalAmount": 400,
+        "discount": 0,
+        "currencyCode": "USD"
+       }
+      }
+     },
+     {
+      "shortDescription": "Drinks and more, pre-voyage only offer",
+      "addonType": "bar",
+      "name": "$500 Bar Tab + $100 Credit",
+      "longName": "Bar Tab",
+      "code": "BSL 500",
+      "subtitle": "Plus a $100 bar bonus on us",
+      "category": "PLUS $100 BAR BONUS",
+      "isPerSailorPurchase": "true",
+      "maximumQuantity": null,
+      "highlightPillLabel": null,
+      "bookingSortPriority": "4",
+      "sellType": "perSailor",
+      "hideOnAddonPage": "false",
+      "addOnDetails": {
+       "code": "BSL 500",
+       "category": "BAR TAB",
+       "type": "SAILOR LOOT",
+       "name": "Bar Tab $500",
+       "associationType": "GUEST",
+       "classifications": [
+        "BOOK",
+        "CANCEL",
+        "SHOW"
+       ],
+       "price": {
+        "amount": 500,
+        "totalAmount": 1000,
+        "discount": 0,
+        "currencyCode": "USD"
+       }
+      }
+     },
+     {
+      "shortDescription": "Drinks and more, pre-voyage only offer",
+      "addonType": "bar",
+      "name": "$750 Bar Tab + $175 Credit",
+      "longName": "Bar Tab",
+      "code": "BSL 750",
+      "subtitle": "Plus a $175 bar bonus on us",
+      "category": "PLUS $175 BAR BONUS",
+      "isPerSailorPurchase": "true",
+      "maximumQuantity": null,
+      "highlightPillLabel": null,
+      "bookingSortPriority": "5",
+      "sellType": "perSailor",
+      "hideOnAddonPage": "false",
+      "addOnDetails": {
+       "code": "BSL 750",
+       "category": "BAR TAB",
+       "type": "SAILOR LOOT",
+       "name": "Bar Tab $750",
+       "associationType": "GUEST",
+       "classifications": [
+        "BOOK",
+        "CANCEL",
+        "SHOW"
+       ],
+       "price": {
+        "amount": 750,
+        "totalAmount": 1500,
+        "discount": 0,
+        "currencyCode": "USD"
+       }
+      }
+     },
+     {
+      "shortDescription": "Drinks and more, pre-voyage only offer",
+      "addonType": "bar",
+      "name": "$1,000 Bar Tab + $250 Credit",
+      "longName": "Bar Tab",
+      "code": "BSL 1000",
+      "subtitle": "Plus a $250 bar bonus on us",
+      "category": "PLUS $250 BAR BONUS",
+      "isPerSailorPurchase": "true",
+      "maximumQuantity": null,
+      "highlightPillLabel": null,
+      "bookingSortPriority": "6",
+      "sellType": "perSailor",
+      "hideOnAddonPage": "false",
+      "addOnDetails": {
+       "code": "BSL 1000",
+       "category": "BAR TAB",
+       "type": "SAILOR LOOT",
+       "name": "Bar Tab $1000",
+       "associationType": "GUEST",
+       "classifications": [
+        "BOOK",
+        "CANCEL",
+        "SHOW"
+       ],
+       "price": {
+        "amount": 1000,
+        "totalAmount": 2000,
+        "discount": 0,
+        "currencyCode": "USD"
+       }
+      }
+     },
+     {
+      "shortDescription": "Add peace of mind before any last-minute surprises",
+      "addonType": "other",
+      "name": "Voyage Protection",
+      "longName": null,
+      "code": "VP",
+      "subtitle": "Protect your voyage with Aon",
+      "category": null,
+      "isPerSailorPurchase": "false",
+      "maximumQuantity": null,
+      "highlightPillLabel": null,
+      "bookingSortPriority": "1",
+      "sellType": "perCabin",
+      "hideOnAddonPage": "false",
+      "addOnDetails": {
+       "code": "VP",
+       "category": "INSURANCE",
+       "type": "INSURANCE",
+       "name": "Voyage Protection",
+       "associationType": "GUEST",
+       "classifications": [
+        "BOOK",
+        "SHOW"
+       ],
+       "price": {
+        "amount": 76,
+        "totalAmount": 152,
+        "discount": 0,
+        "currencyCode": "USD"
+       }
+      }
+     },
+     {
+      "shortDescription": "100% goes to our Crew",
+      "addonType": "other",
+      "name": "Service Gratuities",
+      "longName": "Service Gratuities",
+      "code": "GRATUITIESPRE",
+      "subtitle": "Choose how you pay service gratuities: prepay (and save) or on board.",
+      "category": "CREW GRATUITIES",
+      "isPerSailorPurchase": "true",
+      "maximumQuantity": null,
+      "highlightPillLabel": null,
+      "bookingSortPriority": null,
+      "sellType": "perCabin",
+      "hideOnAddonPage": "false",
+      "addOnDetails": {
+       "code": "GRATUITIESPRE",
+       "category": "PURCHASED",
+       "type": "SRV CHARGES",
+       "name": "Prepaid Service Gratuities",
+       "associationType": "GUEST",
+       "classifications": [
+        "BOOK",
+        "SHOW"
+       ],
+       "price": {
+        "amount": 140,
+        "totalAmount": 280,
+        "discount": 0,
+        "currencyCode": "USD"
+       }
+      }
+     },
+     {
+      "shortDescription": "Drinks and more, pre-voyage only offer",
+      "addonType": "bar",
+      "name": "$300 Bar Tab + $50 Credit",
+      "longName": "Bar Tab",
+      "code": "BSL 300",
+      "subtitle": "Plus a $50 bar bonus on us",
+      "category": "PLUS $50 BAR BONUS",
+      "isPerSailorPurchase": "true",
+      "maximumQuantity": null,
+      "highlightPillLabel": "Top Pick",
+      "bookingSortPriority": "3",
+      "sellType": "perSailor",
+      "hideOnAddonPage": "false",
+      "addOnDetails": {
+       "code": "BSL 300",
+       "category": "BAR TAB",
+       "type": "SAILOR LOOT",
+       "name": "Bar Tab $300",
+       "associationType": "GUEST",
+       "classifications": [
+        "BOOK",
+        "CANCEL",
+        "SHOW"
+       ],
+       "price": {
+        "amount": 300,
+        "totalAmount": 600,
+        "discount": 0,
+        "currencyCode": "USD"
+       }
+      }
+     }
+    ]
+   }
+  ]
+ }
+}
