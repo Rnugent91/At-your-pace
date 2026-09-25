@@ -170,6 +170,11 @@ def _hhmm(t: Optional[str]) -> Optional[str]:
 
 class RoyalCaribbeanProvider:
     name = "Royal Caribbean (live)"
+    # Brand constants for the shared RCCL products GraphQL (overridden by CelebrityProvider).
+    graphql_headers = GRAPHQL_HEADERS
+    addon_categories = ADDON_CATEGORIES
+    addon_source = "Royal Caribbean Cruise Planner"
+    brand_label = "Royal Caribbean"
 
     def __init__(self, cf: CloudflareBrowser, graphql_url: str, http: Optional[httpx.Client] = None):
         self.cf = cf
@@ -410,7 +415,7 @@ class RoyalCaribbeanProvider:
         body = {"operationName": "WebProductsByCategory", "variables": variables, "query": PRODUCT_QUERY}
         for _ in range(3):
             try:
-                resp = self.http.post(self.graphql_url, json=body, headers=GRAPHQL_HEADERS)
+                resp = self.http.post(self.graphql_url, json=body, headers=self.graphql_headers)
                 if resp.status_code == 200:
                     data = resp.json()
                     if "errors" not in data:
@@ -422,7 +427,7 @@ class RoyalCaribbeanProvider:
     def fetch_addons(self, ship_code: str, sail_date: str, warnings: list[str]) -> list[AddOn]:
         addons: list[AddOn] = []
         failed = []
-        for category, kind, paginated in ADDON_CATEGORIES:
+        for category, kind, paginated in self.addon_categories:
             page, total_pages = 0, 1
             while page < total_pages:
                 data = self._graphql(
@@ -443,15 +448,15 @@ class RoyalCaribbeanProvider:
                     failed.append(category)
                     break
                 products = ((data.get("data") or {}).get("products")) or {}
-                addons.extend(self.map_products(products.get("commerceProducts") or [], kind))
+                addons.extend(self.map_products(products.get("commerceProducts") or [], kind, self.addon_source))
                 total_pages = ((products.get("pageInfo") or {}).get("totalPages")) or 1 if paginated else 1
                 page += 1
         if failed:
-            warnings.append(f"Couldn't load Royal Caribbean add-ons for: {', '.join(failed)}.")
+            warnings.append(f"Couldn't load {self.brand_label} add-ons for: {', '.join(failed)}.")
         return addons
 
     @staticmethod
-    def map_products(products: list[dict], kind: str) -> list[AddOn]:
+    def map_products(products: list[dict], kind: str, source: str = "Royal Caribbean Cruise Planner") -> list[AddOn]:
         out = []
         for p in products:
             prices = p.get("price") or []
@@ -471,7 +476,7 @@ class RoyalCaribbeanProvider:
                     unit_label=label,
                     port=port,
                     description=f"Promotion: {promo}" if promo else None,
-                    source="Royal Caribbean Cruise Planner",
+                    source=source,
                 )
             )
         return out

@@ -1,0 +1,145 @@
+{
+ "drinks": {
+  "data": {
+   "products": {
+    "commerceProducts": [
+     {
+      "id": "Y9V9",
+      "title": "Ultimate Bundle: Premium Drinks and Wi-Fi Upgrade",
+      "dayPorts": [],
+      "price": [
+       {
+        "formattedPromotionalPrice": "$21.99",
+        "formattedBasePrice": "$30.00",
+        "salesUnit": {
+         "label": "Adult Per Day"
+        }
+       }
+      ],
+      "promotion": {
+       "displayName": "(25% OFF) FLASH SALE"
+      }
+     },
+     {
+      "id": "3005",
+      "title": "Premium Drinks Package",
+      "dayPorts": [],
+      "price": [
+       {
+        "formattedPromotionalPrice": "$87.99",
+        "formattedBasePrice": "$110.00",
+        "salesUnit": {
+         "label": "Adult Per Day"
+        }
+       }
+      ],
+      "promotion": {
+       "displayName": "(20% OFF) FLASH SALE"
+      }
+     }
+    ],
+    "pageInfo": {
+     "totalPages": 1
+    }
+   }
+  }
+ },
+ "wifi": {
+  "data": {
+   "products": {
+    "commerceProducts": [
+     {
+      "id": "Y9V9",
+      "title": "Ultimate Bundle: Premium Drinks and Wi-Fi Upgrade",
+      "dayPorts": [],
+      "price": [
+       {
+        "formattedPromotionalPrice": "$21.99",
+        "formattedBasePrice": "$30.00",
+        "salesUnit": {
+         "label": "Adult Per Day"
+        }
+       }
+      ],
+      "promotion": {
+       "displayName": "(25% OFF) FLASH SALE"
+      }
+     },
+     {
+      "id": "33F0",
+      "title": "Premium Wi-Fi",
+      "dayPorts": [],
+      "price": [
+       {
+        "formattedPromotionalPrice": "$22.99",
+        "formattedBasePrice": "$32.99",
+        "salesUnit": {
+         "label": "Adult Per Night"
+        }
+       }
+      ],
+      "promotion": {
+       "displayName": "(30% OFF) SAVE MORE ON ADDITIONAL DEVICES"
+      }
+     }
+    ],
+    "pageInfo": {
+     "totalPages": 1
+    }
+   }
+  }
+ },
+ "shorex": {
+  "data": {
+   "products": {
+    "commerceProducts": [
+     {
+      "id": "CZCV",
+      "title": "Destination Highlight: All inclusive Dolphin Swim",
+      "dayPorts": [
+       {
+        "port": "Cozumel, Mexico"
+       }
+      ],
+      "price": [
+       {
+        "formattedPromotionalPrice": "$106.99",
+        "formattedBasePrice": "$178.99",
+        "salesUnit": {
+         "label": "Per Adult"
+        }
+       }
+      ],
+      "promotion": {
+       "displayName": "(40% OFF) FLASH SALE"
+      }
+     },
+     {
+      "id": "CZIG",
+      "title": "Small Group: San Gervasio Mayan Ruins with Local Historian",
+      "dayPorts": [
+       {
+        "port": "Cozumel, Mexico"
+       }
+      ],
+      "price": [
+       {
+        "formattedPromotionalPrice": "$162.99",
+        "formattedBasePrice": "$271.99",
+        "salesUnit": {
+         "label": "Per Adult"
+        }
+       }
+      ],
+      "promotion": {
+       "displayName": "(40% OFF) FLASH SALE"
+      }
+     }
+    ],
+    "pageInfo": {
+     "totalPages": 1
+    }
+   }
+  }
+ }
+}

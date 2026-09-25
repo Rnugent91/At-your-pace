@@ -1,0 +1,225 @@
+{
+ "data": {
+  "cruiseSearch": {
+   "results": {
+    "cruises": [
+     {
+      "id": "BY04FLL-4187031086",
+      "sailings": [
+       {
+        "id": "BY04W200_2026-11-18",
+        "sailDate": "2026-11-18",
+        "taxesAndFees": {
+         "value": 118.2
+        },
+        "taxesAndFeesIncluded": true,
+        "stateroomClassPricing": [
+         {
+          "price": {
+           "value": 646.7,
+           "netAmount": 646.7,
+           "originalAmount": 1084.2,
+           "taxesAndFeesAmount": 118.2,
+           "areTaxesAndFeesIncluded": true,
+           "currency": {
+            "code": "USD"
+           }
+          },
+          "stateroomClass": {
+           "id": "INTERIOR",
+           "name": "Inside"
+          }
+         },
+         {
+          "price": {
+           "value": 629.2,
+           "netAmount": 629.2,
+           "originalAmount": 1056.2,
+           "taxesAndFeesAmount": 118.2,
+           "areTaxesAndFeesIncluded": true,
+           "currency": {
+            "code": "USD"
+           }
+          },
+          "stateroomClass": {
+           "id": "OUTSIDE",
+           "name": "Ocean View"
+          }
+         },
+         {
+          "price": {
+           "value": 729.2,
+           "netAmount": 729.2,
+           "originalAmount": 1296.2,
+           "taxesAndFeesAmount": 118.2,
+           "areTaxesAndFeesIncluded": true,
+           "currency": {
+            "code": "USD"
+           }
+          },
+          "stateroomClass": {
+           "id": "BALCONY",
+           "name": "Veranda"
+          }
+         },
+         {
+          "price": {
+           "value": 779.2,
+           "netAmount": 779.2,
+           "originalAmount": 1376.2,
+           "taxesAndFeesAmount": 118.2,
+           "areTaxesAndFeesIncluded": true,
+           "currency": {
+            "code": "USD"
+           }
+          },
+          "stateroomClass": {
+           "id": "CONCIERGE",
+           "name": "Concierge Class"
+          }
+         },
+         {
+          "price": {
+           "value": 1279.2,
+           "netAmount": 1279.2,
+           "originalAmount": 2176.2,
+           "taxesAndFeesAmount": 118.2,
+           "areTaxesAndFeesIncluded": true,
+           "currency": {
+            "code": "USD"
+           }
+          },
+          "stateroomClass": {
+           "id": "AQUA",
+           "name": "Aquaclass"
+          }
+         },
+         {
+          "price": {
+           "value": 2384.2,
+           "netAmount": 2384.2,
+           "originalAmount": 4064.2,
+           "taxesAndFeesAmount": 118.2,
+           "areTaxesAndFeesIncluded": true,
+           "currency": {
+            "code": "USD"
+           }
+          },
+          "stateroomClass": {
+           "id": "DELUXE",
+           "name": "The Retreat"
+          }
+         }
+        ]
+       }
+      ],
+      "masterSailing": {
+       "itinerary": {
+        "name": "Western Caribbean",
+        "code": "BY04W200",
+        "totalNights": 4,
+        "sailingNights": 4,
+        "type": "CRUISE",
+        "ship": {
+         "code": "BY",
+         "name": "Celebrity Beyond"
+        },
+        "departurePort": {
+         "code": "FLL",
+         "name": "Fort Lauderdale",
+         "region": "Florida"
+        },
+        "destination": {
+         "code": "CARIB",
+         "name": "Caribbean"
+        },
+        "days": [
+         {
+          "number": 1,
+          "type": "PORT",
+          "ports": [
+           {
+            "activity": "EMBARK",
+            "arrivalTime": null,
+            "departureTime": "16:00:00",
+            "port": {
+             "code": "FLL",
+             "name": "Fort Lauderdale",
+             "region": "Florida"
+            }
+           }
+          ]
+         },
+         {
+          "number": 2,
+          "type": "CRUISING",
+          "ports": [
+           {
+            "activity": "CRUISING",
+            "arrivalTime": null,
+            "departureTime": null,
+            "port": {
+             "code": "ASE",
+             "name": "Cruising",
+             "region": null
+            }
+           }
+          ]
+         },
+         {
+          "number": 3,
+          "type": "PORT",
+          "ports": [
+           {
+            "activity": "DOCKED",
+            "arrivalTime": "07:00:00",
+            "departureTime": "20:00:00",
+            "port": {
+             "code": "CZM",
+             "name": "Cozumel",
+             "region": "Mexico"
+            }
+           }
+          ]
+         },
+         {
+          "number": 4,
+          "type": "CRUISING",
+          "ports": [
+           {
+            "activity": "CRUISING",
+            "arrivalTime": null,
+            "departureTime": null,
+            "port": {
+             "code": "ASE",
+             "name": "Cruising",
+             "region": null
+            }
+           }
+          ]
+         },
+         {
+          "number": 5,
+          "type": "PORT",
+          "ports": [
+           {
+            "activity": "DEBARK",
+            "arrivalTime": "07:00:00",
+            "departureTime": null,
+            "port": {
+             "code": "FLL",
+             "name": "Fort Lauderdale",
+             "region": "Florida"
+            }
+           }
+          ]
+         }
+        ]
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}
