@@ -23,6 +23,22 @@ The daily sync (`python -m app.sync`, run by `deploy/quotes-sync.timer`) pulls e
 
 Timings are from a datacenter server. "Fallback only" means the provider switches to Cloudflare Browser Rendering automatically if the line starts blocking direct requests.
 
+### Add-ons each line provides
+
+Quotes carry each line's own extras. "Sailing" means priced for that exact sailing; "published" means the line's public price list. If a line has no priced drinks, Wi-Fi, specialty dining or excursions, Claude web research fills that kind in and flags it to verify.
+
+| Line | Drinks | Wi-Fi | Specialty dining | Shore excursions | Other |
+|---|---|---|---|---|---|
+| Royal Caribbean / Celebrity | sailing | sailing | sailing | sailing | activities, photo |
+| Carnival | published (incl. 20% service) | published | published, filtered to ship | published, every port | gratuities & protection (sailing), thermal suite, photo, Faster to the Fun |
+| Princess | published | web research | published | sailing | gratuities, Plus/Premier (sailing) |
+| Holland America | published | published | published | published "from" | service charges, Have It All (sailing) |
+| Norwegian | Free at Sea (sailing), packages published | published | published | published, per port | service charges & NorwegianCare (sailing) |
+| MSC | Drinks & Wi-Fi fare (sailing); packages via web research | web research | — | listed, unpriced | service charges |
+| Disney | — (none sold) | web research | web research | Port Adventures, published | gratuities (sailing) |
+| Virgin Voyages | Bar Tab tiers (sailing) | included | included | Shore Things, published | gratuities & protection (sailing) |
+| Viking | Silver Spirits, published | included | included | included + optional (unpriced) | Viking Air (sailing), extensions |
+
 To re-price every room type on every sailing daily (not just watched ones), add `--all-rooms all --room-workers 10` to the sync command. That is the main Cloudflare cost: Royal Caribbean's room types take one or more browser renders per sailing, which the paid plan covers comfortably.
 
 1. Enter the client, cruise line, ship and sail date (e.g. *Royal Caribbean · Utopia of the Seas · Oct 26*).
