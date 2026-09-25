@@ -1,0 +1,1384 @@
+{
+ "results": [
+  {
+   "stateroomId": "0",
+   "result": {
+    "stateroomTypesPricing": [
+     {
+      "isSoldOut": false,
+      "stateroomsPricing": [
+       {
+        "isSoldOut": false,
+        "isBestAvailableByRanking": true,
+        "stateroom": {
+         "categoryIds": [
+          "T1"
+         ],
+         "code": "GETAWAY.Studio_T1.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 1,
+         "isSailAway": false,
+         "title": "Solo Studio"
+        },
+        "isAvailable": false,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "T1",
+           "pricedCategoryCode": "T1",
+           "guestCapacity": 0,
+           "isGTY": false,
+           "isWheelchairAccessible": false
+          },
+          "isAvailable": false,
+          "isSoldOut": false
+         }
+        ]
+       }
+      ],
+      "code": "STUDIO",
+      "isAvailable": false,
+      "title": "Studio"
+     },
+     {
+      "isSoldOut": false,
+      "price": 379,
+      "stateroomsPricing": [
+       {
+        "isSoldOut": false,
+        "price": 409,
+        "isBestAvailableByRanking": true,
+        "stateroom": {
+         "categoryIds": [
+          "I4"
+         ],
+         "code": "GETAWAY.Family Inside_I4.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "Family Inside"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "I4",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "I4",
+           "guestCapacity": 4,
+           "price": 409
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 379,
+        "stateroom": {
+         "categoryIds": [
+          "IB",
+          "IA",
+          "IC",
+          "IF"
+         ],
+         "code": "GETAWAY.Inside_IA_IB_IC_IF.R2-2024",
+         "isWheelchairAccessible": true,
+         "guestCapacity": 2,
+         "isSailAway": false,
+         "title": "Inside"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "IB",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "IB",
+           "guestCapacity": 4,
+           "price": 389
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         },
+         {
+          "standardOption": {
+           "berthedCategoryCode": "IA",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "IA",
+           "guestCapacity": 3,
+           "price": 399
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         },
+         {
+          "standardOption": {
+           "berthedCategoryCode": "IC",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "IC",
+           "guestCapacity": 4,
+           "price": 379
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         },
+         {
+          "standardOption": {
+           "berthedCategoryCode": "IF",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "IF",
+           "guestCapacity": 4,
+           "price": 379
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 359,
+        "stateroom": {
+         "categoryIds": [
+          "IX"
+         ],
+         "code": "GETAWAY.Sailaway Inside-IX.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": true,
+         "title": "Guarantee Inside"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "IX",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "IX",
+           "guestCapacity": 4,
+           "price": 359
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "IT",
+           "pricedCategoryCode": "IT",
+           "guestCapacity": 0,
+           "isGTY": false,
+           "isWheelchairAccessible": false
+          },
+          "isAvailable": false,
+          "isSoldOut": false
+         }
+        ],
+        "stateroom": {
+         "categoryIds": [
+          "IT"
+         ],
+         "code": "GETAWAY.Solo.Inside_IT.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 1,
+         "isSailAway": false,
+         "title": "Solo Inside"
+        },
+        "isAvailable": false,
+        "isSoldOut": false
+       }
+      ],
+      "code": "INSIDE",
+      "isAvailable": true,
+      "title": "Inside"
+     },
+     {
+      "isSoldOut": false,
+      "price": 409,
+      "stateroomsPricing": [
+       {
+        "isSoldOut": false,
+        "price": 479,
+        "isBestAvailableByRanking": true,
+        "stateroom": {
+         "categoryIds": [
+          "O4",
+          "O5"
+         ],
+         "code": "GETAWAY.Family Oceanview_O4_O5.R2-2024",
+         "isWheelchairAccessible": true,
+         "guestCapacity": 5,
+         "isSailAway": false,
+         "title": "Family Oceanview"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "O4",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "O4",
+           "guestCapacity": 4,
+           "price": 479
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         },
+         {
+          "standardOption": {
+           "berthedCategoryCode": "O5",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "O5",
+           "guestCapacity": 5,
+           "price": 489
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 409,
+        "stateroom": {
+         "categoryIds": [
+          "OA",
+          "OB"
+         ],
+         "code": "GETAWAY.Oceanview with Picture Window_OA_OB.R2-2024",
+         "isWheelchairAccessible": true,
+         "guestCapacity": 5,
+         "isSailAway": false,
+         "title": "Oceanview with Picture Window"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "OA",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "OA",
+           "guestCapacity": 2,
+           "price": 419
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         },
+         {
+          "standardOption": {
+           "berthedCategoryCode": "OB",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "OB",
+           "guestCapacity": 2,
+           "price": 409
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 389,
+        "stateroom": {
+         "categoryIds": [
+          "OX"
+         ],
+         "code": "GETAWAY.Sailaway Oceanview_OX.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 2,
+         "isSailAway": true,
+         "title": "Guarantee Oceanview"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "OX",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "OX",
+           "guestCapacity": 2,
+           "price": 389
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "OT",
+           "pricedCategoryCode": "OT",
+           "guestCapacity": 0,
+           "isGTY": false,
+           "isWheelchairAccessible": false
+          },
+          "isAvailable": false,
+          "isSoldOut": false
+         }
+        ],
+        "stateroom": {
+         "categoryIds": [
+          "OT"
+         ],
+         "code": "GETAWAY.Solo.Oceanview_OT.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 1,
+         "isSailAway": false,
+         "title": "Solo Oceanview"
+        },
+        "isAvailable": false,
+        "isSoldOut": false
+       }
+      ],
+      "code": "OCEANVIEW",
+      "isAvailable": true,
+      "title": "Oceanview"
+     },
+     {
+      "isSoldOut": false,
+      "price": 459,
+      "stateroomsPricing": [
+       {
+        "isSoldOut": false,
+        "price": 579,
+        "isBestAvailableByRanking": true,
+        "stateroom": {
+         "categoryIds": [
+          "B1"
+         ],
+         "code": "GETAWAY.Aft-Facing Balcony_B1.R2-2024",
+         "isWheelchairAccessible": true,
+         "guestCapacity": 3,
+         "isSailAway": false,
+         "title": "Aft-Facing Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "B1",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "B1",
+           "guestCapacity": 3,
+           "price": 579
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 479,
+        "stateroom": {
+         "categoryIds": [
+          "B4"
+         ],
+         "code": "GETAWAY.Family Balcony_B4.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "Family Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "B4",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "B4",
+           "guestCapacity": 4,
+           "price": 479
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 479,
+        "stateroom": {
+         "categoryIds": [
+          "B6"
+         ],
+         "code": "GETAWAY.Large Balcony_B6.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "Large Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "B6",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "B6",
+           "guestCapacity": 4,
+           "price": 479
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 459,
+        "stateroom": {
+         "categoryIds": [
+          "BB",
+          "BA",
+          "BF"
+         ],
+         "code": "GETAWAY.Balcony_BA_BB_BF.R2-2024",
+         "isWheelchairAccessible": true,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "BB",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "BB",
+           "guestCapacity": 4,
+           "price": 459
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         },
+         {
+          "standardOption": {
+           "berthedCategoryCode": "BA",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "BA",
+           "guestCapacity": 4,
+           "price": 469
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         },
+         {
+          "standardOption": {
+           "berthedCategoryCode": "BF",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "BF",
+           "guestCapacity": 4,
+           "price": 459
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 439,
+        "stateroom": {
+         "categoryIds": [
+          "BX"
+         ],
+         "code": "GETAWAY.Sailaway Balcony_BX.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": true,
+         "title": "Guarantee Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "BX",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "BX",
+           "guestCapacity": 4,
+           "price": 439
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "BT",
+           "pricedCategoryCode": "BT",
+           "guestCapacity": 0,
+           "isGTY": false,
+           "isWheelchairAccessible": false
+          },
+          "isAvailable": false,
+          "isSoldOut": false
+         }
+        ],
+        "stateroom": {
+         "categoryIds": [
+          "BT"
+         ],
+         "code": "GETAWAY.Solo.Balcony_BT.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 1,
+         "isSailAway": false,
+         "title": "Solo Balcony"
+        },
+        "isAvailable": false,
+        "isSoldOut": false
+       }
+      ],
+      "code": "BALCONY",
+      "isAvailable": true,
+      "title": "Balcony"
+     },
+     {
+      "isSoldOut": false,
+      "price": 509,
+      "stateroomsPricing": [
+       {
+        "isSoldOut": false,
+        "price": 759,
+        "isBestAvailableByRanking": true,
+        "stateroom": {
+         "categoryIds": [
+          "M1"
+         ],
+         "code": "GETAWAY.AFT-FACING CLUB BALCONY SUITE_M1.R2-2024",
+         "isWheelchairAccessible": true,
+         "guestCapacity": 2,
+         "isSailAway": false,
+         "title": "Aft-Facing Club Balcony Suite"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "M1",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "M1",
+           "guestCapacity": 2,
+           "price": 759
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 519,
+        "stateroom": {
+         "categoryIds": [
+          "M4"
+         ],
+         "code": "GETAWAY.FAMILY CLUB BALCONY SUITE_M4.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "Family Club Balcony Suite"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "M4",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "M4",
+           "guestCapacity": 4,
+           "price": 519
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 559,
+        "stateroom": {
+         "categoryIds": [
+          "M6"
+         ],
+         "code": "GETAWAY.CLUB BALCONY SUITE WITH LARGER BALCONY_M6.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "Club Balcony Suite with Larger Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "M6",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "M6",
+           "guestCapacity": 4,
+           "price": 559
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 509,
+        "stateroom": {
+         "categoryIds": [
+          "MB",
+          "MA"
+         ],
+         "code": "GETAWAY.CLUB BALCONY SUITE_MA_MB.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "Club Balcony Suite"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "MB",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "MB",
+           "guestCapacity": 4,
+           "price": 509
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         },
+         {
+          "standardOption": {
+           "berthedCategoryCode": "MA",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "MA",
+           "guestCapacity": 4,
+           "price": 509
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 489,
+        "stateroom": {
+         "categoryIds": [
+          "MX"
+         ],
+         "code": "GETAWAY.SAIL AWAY CLUB BALCONY SUITE_MX.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 3,
+         "isSailAway": true,
+         "title": "Guarantee Club Balcony Suite"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "MX",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "MX",
+           "guestCapacity": 3,
+           "price": 489
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       }
+      ],
+      "code": "MINISUITE",
+      "isAvailable": true,
+      "title": "Club Balcony Suite"
+     },
+     {
+      "isSoldOut": false,
+      "price": 1679,
+      "stateroomsPricing": [
+       {
+        "isSoldOut": false,
+        "price": 3859,
+        "isBestAvailableByRanking": true,
+        "stateroom": {
+         "categoryIds": [
+          "H2"
+         ],
+         "code": "GETAWAY.The Haven Deluxe Owner's Suite with Large Balcony_H2.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "The Haven Deluxe Owner's Suite with Large Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "H2",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "H2",
+           "guestCapacity": 4,
+           "price": 3859
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 2779,
+        "stateroom": {
+         "categoryIds": [
+          "H3"
+         ],
+         "code": "GETAWAY.The Haven Deluxe Owner's Suite with Balcony_H3.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "The Haven Deluxe Owner's Suite with Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "H3",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "H3",
+           "guestCapacity": 4,
+           "price": 2779
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 2319,
+        "stateroom": {
+         "categoryIds": [
+          "H6"
+         ],
+         "code": "GETAWAY.The Haven 2-Bedroom Family Villa with Balcony_H6.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 6,
+         "isSailAway": false,
+         "title": "The Haven 2-Bedroom Family Villa with Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "H6",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "H6",
+           "guestCapacity": 6,
+           "price": 2319
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 2119,
+        "stateroom": {
+         "categoryIds": [
+          "H7"
+         ],
+         "code": "GETAWAY.The Haven Aft-Facing Penthouse with Master Bedroom & Large Balcony_H7.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "The Haven Aft-Facing Penthouse with Master Bedroom & Large Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "H7",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "H7",
+           "guestCapacity": 4,
+           "price": 2119
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 2069,
+        "stateroom": {
+         "categoryIds": [
+          "HA"
+         ],
+         "code": "GETAWAY.The Haven Aft-Facing Penthouse with Master Bedroom & Balcony_HA.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 4,
+         "isSailAway": false,
+         "title": "The Haven Aft-Facing Penthouse with Master Bedroom & Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "HA",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "HA",
+           "guestCapacity": 4,
+           "price": 2069
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 1859,
+        "stateroom": {
+         "categoryIds": [
+          "HF"
+         ],
+         "code": "GETAWAY.The Haven Courtyard Penthouse with Balcony_HF.R2-2024",
+         "isWheelchairAccessible": true,
+         "guestCapacity": 3,
+         "isSailAway": false,
+         "title": "The Haven Courtyard Penthouse with Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "HF",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "HF",
+           "guestCapacity": 3,
+           "price": 1859
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 1809,
+        "stateroom": {
+         "categoryIds": [
+          "HG"
+         ],
+         "code": "GETAWAY.The Haven Forward-Facing Penthouse with Balcony_HG.R2-2024",
+         "isWheelchairAccessible": true,
+         "guestCapacity": 3,
+         "isSailAway": false,
+         "title": "The Haven Forward-Facing Penthouse with Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "HG",
+           "isGTY": false,
+           "isWheelchairAccessible": true,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "HG",
+           "guestCapacity": 3,
+           "price": 1809
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       },
+       {
+        "isSoldOut": false,
+        "price": 1679,
+        "stateroom": {
+         "categoryIds": [
+          "HI"
+         ],
+         "code": "GETAWAY.Haven Penthouse Suite with Balcony_HI.R2-2024",
+         "isWheelchairAccessible": false,
+         "guestCapacity": 2,
+         "isSailAway": false,
+         "title": "The Haven Penthouse Suite with Balcony"
+        },
+        "isAvailable": true,
+        "categoryPricing": [
+         {
+          "standardOption": {
+           "berthedCategoryCode": "HI",
+           "isGTY": false,
+           "isWheelchairAccessible": false,
+           "fareCode": "BESTFARE",
+           "pricedCategoryCode": "HI",
+           "guestCapacity": 2,
+           "price": 1679
+          },
+          "isAvailable": true,
+          "isSoldOut": false
+         }
+        ]
+       }
+      ],
+      "code": "HAVEN",
+      "isAvailable": true,
+      "title": "The Haven"
+     }
+    ],
+    "offerGroups": [
+     {
+      "code": "FREE-AT-SEA",
+      "weight": 2,
+      "title": "Free at Sea™",
+      "promotionsInGroup": [
+       {
+        "isDefaultInGroup": true,
+        "promotion": {
+         "promotionCodes": [
+          "ALL4CHO"
+         ],
+         "stateroomTypes": [
+          "STUDIO",
+          "INSIDE",
+          "OCEANVIEW",
+          "MINISUITE",
+          "BALCONY"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "unlimited-open-bar-offer",
+           "title": "Unlimited Open Bar",
+           "offerType": "beverage-package-offer"
+          },
+          {
+           "code": "specialty-dining-offer",
+           "title": "Specialty Dining",
+           "offerType": "dining-offer"
+          },
+          {
+           "code": "specialty-dining-offer-2-4-nights",
+           "title": "Specialty Dining - 1 Meal",
+           "offerType": "dining-offer"
+          },
+          {
+           "code": "free-wifi-offer",
+           "title": "Wi-Fi Package",
+           "offerType": "wifi-package-offer"
+          },
+          {
+           "code": "excursion-credits-offer",
+           "title": "Excursion Credits",
+           "offerType": "shorex-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [
+          "BVSXIN"
+         ],
+         "stateroomTypes": [
+          "BALCONY",
+          "MINISUITE",
+          "INSIDE",
+          "OCEANVIEW",
+          "STUDIO"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "unlimited-open-bar-offer",
+           "title": "Unlimited Open Bar",
+           "offerType": "beverage-package-offer"
+          },
+          {
+           "code": "free-wifi-offer",
+           "title": "Wi-Fi Package",
+           "offerType": "wifi-package-offer"
+          },
+          {
+           "code": "excursion-credits-offer",
+           "title": "Excursion Credits",
+           "offerType": "shorex-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": true,
+        "promotion": {
+         "promotionCodes": [
+          "CHOALL4M"
+         ],
+         "stateroomTypes": [
+          "HAVEN",
+          "SUITE"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "unlimited-open-bar-offer",
+           "title": "Unlimited Open Bar",
+           "offerType": "beverage-package-offer"
+          },
+          {
+           "code": "specialty-dining-offer",
+           "title": "Specialty Dining",
+           "offerType": "dining-offer"
+          },
+          {
+           "code": "specialty-dining-offer-2-4-nights",
+           "title": "Specialty Dining - 1 Meal",
+           "offerType": "dining-offer"
+          },
+          {
+           "code": "free-wifi-offer",
+           "title": "Wi-Fi Package",
+           "offerType": "wifi-package-offer"
+          },
+          {
+           "code": "excursion-credits-offer",
+           "title": "Excursion Credits",
+           "offerType": "shorex-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [
+          "HSBVSXIN"
+         ],
+         "stateroomTypes": [
+          "HAVEN",
+          "SUITE"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "unlimited-open-bar-offer",
+           "title": "Unlimited Open Bar",
+           "offerType": "beverage-package-offer"
+          },
+          {
+           "code": "free-wifi-offer",
+           "title": "Wi-Fi Package",
+           "offerType": "wifi-package-offer"
+          },
+          {
+           "code": "excursion-credits-offer",
+           "title": "Excursion Credits",
+           "offerType": "shorex-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [
+          "DISXIN"
+         ],
+         "stateroomTypes": [
+          "BALCONY",
+          "MINISUITE",
+          "INSIDE",
+          "OCEANVIEW",
+          "STUDIO"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "specialty-dining-offer",
+           "title": "Specialty Dining",
+           "offerType": "dining-offer"
+          },
+          {
+           "code": "specialty-dining-offer-2-4-nights",
+           "title": "Specialty Dining - 1 Meal",
+           "offerType": "dining-offer"
+          },
+          {
+           "code": "free-wifi-offer",
+           "title": "Wi-Fi Package",
+           "offerType": "wifi-package-offer"
+          },
+          {
+           "code": "excursion-credits-offer",
+           "title": "Excursion Credits",
+           "offerType": "shorex-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [
+          "HSDISXIN"
+         ],
+         "stateroomTypes": [
+          "HAVEN",
+          "SUITE"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "specialty-dining-offer",
+           "title": "Specialty Dining",
+           "offerType": "dining-offer"
+          },
+          {
+           "code": "specialty-dining-offer-2-4-nights",
+           "title": "Specialty Dining - 1 Meal",
+           "offerType": "dining-offer"
+          },
+          {
+           "code": "free-wifi-offer",
+           "title": "Wi-Fi Package",
+           "offerType": "wifi-package-offer"
+          },
+          {
+           "code": "excursion-credits-offer",
+           "title": "Excursion Credits",
+           "offerType": "shorex-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [
+          "INTSHO"
+         ],
+         "stateroomTypes": [
+          "BALCONY",
+          "MINISUITE",
+          "INSIDE",
+          "OCEANVIEW",
+          "STUDIO"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "free-wifi-offer",
+           "title": "Wi-Fi Package",
+           "offerType": "wifi-package-offer"
+          },
+          {
+           "code": "excursion-credits-offer",
+           "title": "Excursion Credits",
+           "offerType": "shorex-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [
+          "HSINTSHO"
+         ],
+         "stateroomTypes": [
+          "SUITE",
+          "HAVEN"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "free-wifi-offer",
+           "title": "Wi-Fi Package",
+           "offerType": "wifi-package-offer"
+          },
+          {
+           "code": "excursion-credits-offer",
+           "title": "Excursion Credits",
+           "offerType": "shorex-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       }
+      ],
+      "isDefaultGroup": false
+     },
+     {
+      "code": "MORE-OFFERS",
+      "weight": 4,
+      "title": "More Offers",
+      "promotionsInGroup": [
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [
+          "DISC50"
+         ],
+         "stateroomTypes": [],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "50-off-all-cruises-offer",
+           "title": "50% Off All Cruises",
+           "offerType": "auto-included-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [],
+         "stateroomTypes": [],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "2-For-1-Deposits-Offer",
+           "title": "2-For-1 Deposits",
+           "offerType": "auto-included-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [],
+         "stateroomTypes": [],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "Risk-Free-Cancellation-Offer",
+           "title": "Risk-Free Cancellation",
+           "offerType": "auto-included-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       },
+       {
+        "isDefaultInGroup": false,
+        "promotion": {
+         "promotionCodes": [
+          "FREESRVC"
+         ],
+         "stateroomTypes": [
+          "BALCONY",
+          "MINISUITE",
+          "HAVEN",
+          "SUITE"
+         ],
+         "notSailAwayCategoriesOnly": false,
+         "offers": [
+          {
+           "code": "Games-On-Sales-Event",
+           "title": "Game On Sales Event",
+           "offerType": "auto-included-offer"
+          }
+         ],
+         "stateroomCategoryIds": []
+        }
+       }
+      ],
+      "isDefaultGroup": false
+     }
+    ]
+   }
+  }
+ ],
+ "currency": {
+  "code": "USD"
+ }
+}

@@ -85,6 +85,7 @@ def build_direct_providers(settings) -> list:
     from .disney import DisneyProvider
     from .holland_america import HollandAmericaProvider
     from .msc import MSCProvider
+    from .norwegian import NorwegianProvider
     from .princess import PrincessProvider
     from .royal_caribbean import RoyalCaribbeanProvider
     from .viking import VikingProvider
@@ -101,6 +102,7 @@ def build_direct_providers(settings) -> list:
         PrincessProvider(cf),
         HollandAmericaProvider(cf),
         DisneyProvider(cf),
+        NorwegianProvider(cf),
     ]
 
 

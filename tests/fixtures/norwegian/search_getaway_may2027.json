@@ -1,0 +1,209 @@
+{
+ "itineraries": [
+  {
+   "objectId": "24223960_CRUISE_INSIDE_2",
+   "bundleType": "cruise",
+   "code": "GETAWAY4MIANPINASMIA",
+   "packageId": "24223960",
+   "title": "4-Day Bahamas Round-Trip Miami: Great Stirrup Cay & Nassau",
+   "startingLocation": "Miami, Florida",
+   "captionTitles": [],
+   "destinations": [
+    {
+     "code": "BAHAMAS",
+     "title": "Bahamas"
+    }
+   ],
+   "embarkationPort": {
+    "code": "MIA",
+    "title": "Miami, Florida"
+   },
+   "disembarkationPort": {
+    "code": "MIA",
+    "title": "Miami, Florida"
+   },
+   "portsOfCall": [
+    {
+     "code": "NPI",
+     "title": "Great Stirrup Cay, Bahamas"
+    },
+    {
+     "code": "NAS",
+     "title": "Nassau, Bahamas"
+    }
+   ],
+   "ship": {
+    "code": "GETAWAY",
+    "title": "Norwegian Getaway"
+   },
+   "duration": {
+    "days": 4,
+    "text": "4-day Cruise"
+   },
+   "currencyCode": "USD",
+   "taxesAndFees": {
+    "text": ""
+   },
+   "combinedPrice": 399.0,
+   "basePrice": 558.0,
+   "weight": 1000
+  },
+  {
+   "objectId": "24223989_CRUISE_INSIDE_2",
+   "bundleType": "cruise",
+   "code": "GETAWAY3MIANASNPIMIA",
+   "packageId": "24223989",
+   "title": "3-Day Bahamas Round-Trip Miami: Nassau & Great Stirrup",
+   "startingLocation": "Miami, Florida",
+   "captionTitles": [],
+   "destinations": [
+    {
+     "code": "BAHAMAS",
+     "title": "Bahamas"
+    },
+    {
+     "code": "WEEKEND",
+     "title": "Weekend"
+    }
+   ],
+   "embarkationPort": {
+    "code": "MIA",
+    "title": "Miami, Florida"
+   },
+   "disembarkationPort": {
+    "code": "MIA",
+    "title": "Miami, Florida"
+   },
+   "portsOfCall": [
+    {
+     "code": "NAS",
+     "title": "Nassau, Bahamas"
+    },
+    {
+     "code": "NPI",
+     "title": "Great Stirrup Cay, Bahamas"
+    }
+   ],
+   "ship": {
+    "code": "GETAWAY",
+    "title": "Norwegian Getaway"
+   },
+   "duration": {
+    "days": 3,
+    "text": "3-day Cruise"
+   },
+   "currencyCode": "USD",
+   "taxesAndFees": {
+    "text": ""
+   },
+   "combinedPrice": 379.0,
+   "basePrice": 518.0,
+   "weight": 996
+  },
+  {
+   "objectId": "24223988_CRUISE_INSIDE_2",
+   "bundleType": "cruise",
+   "code": "GETAWAY3MIANPINASMIA",
+   "packageId": "24223988",
+   "title": "3-Day Bahamas Round-Trip Miami: Great Stirrup Cay & Nassau",
+   "startingLocation": "Miami, Florida",
+   "captionTitles": [],
+   "destinations": [
+    {
+     "code": "BAHAMAS",
+     "title": "Bahamas"
+    },
+    {
+     "code": "WEEKEND",
+     "title": "Weekend"
+    }
+   ],
+   "embarkationPort": {
+    "code": "MIA",
+    "title": "Miami, Florida"
+   },
+   "disembarkationPort": {
+    "code": "MIA",
+    "title": "Miami, Florida"
+   },
+   "portsOfCall": [
+    {
+     "code": "NPI",
+     "title": "Great Stirrup Cay, Bahamas"
+    },
+    {
+     "code": "NAS",
+     "title": "Nassau, Bahamas"
+    }
+   ],
+   "ship": {
+    "code": "GETAWAY",
+    "title": "Norwegian Getaway"
+   },
+   "duration": {
+    "days": 3,
+    "text": "3-day Cruise"
+   },
+   "currencyCode": "USD",
+   "taxesAndFees": {
+    "text": ""
+   },
+   "combinedPrice": 379.0,
+   "basePrice": 518.0,
+   "weight": 927
+  },
+  {
+   "objectId": "24223961_CRUISE_INSIDE_2",
+   "bundleType": "cruise",
+   "code": "GETAWAY4MIANASNPIMIA",
+   "packageId": "24223961",
+   "title": "4-Day Bahamas Round-trip Miami: Great Stirrup Cay & Nassau",
+   "startingLocation": "Miami, Florida",
+   "captionTitles": [],
+   "destinations": [
+    {
+     "code": "BAHAMAS",
+     "title": "Bahamas"
+    }
+   ],
+   "embarkationPort": {
+    "code": "MIA",
+    "title": "Miami, Florida"
+   },
+   "disembarkationPort": {
+    "code": "MIA",
+    "title": "Miami, Florida"
+   },
+   "portsOfCall": [
+    {
+     "code": "NAS",
+     "title": "Nassau, Bahamas"
+    },
+    {
+     "code": "NPI",
+     "title": "Great Stirrup Cay, Bahamas"
+    }
+   ],
+   "ship": {
+    "code": "GETAWAY",
+    "title": "Norwegian Getaway"
+   },
+   "duration": {
+    "days": 4,
+    "text": "4-day Cruise"
+   },
+   "currencyCode": "USD",
+   "taxesAndFees": {
+    "text": ""
+   },
+   "combinedPrice": 399.0,
+   "basePrice": 558.0,
+   "weight": 100
+  }
+ ],
+ "extraParams": {},
+ "total": 4,
+ "offset": 0,
+ "limit": 100,
+ "queryId": "2f0b31b5d564f1e9557dd53332c9eec5"
+}

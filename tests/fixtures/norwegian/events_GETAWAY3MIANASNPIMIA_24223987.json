@@ -1,0 +1,78 @@
+[
+ {
+  "day": 1,
+  "events": [
+   {
+    "eventType": "PORT",
+    "date": "2027-05-07T16:00:00",
+    "order": 1,
+    "title": "Miami, Florida",
+    "portInfo": {
+     "isTender": false,
+     "isEmbarkation": true,
+     "isDisembarkation": false,
+     "isOverNight": false,
+     "dailySchedule": "4:00 PM",
+     "code": "MIA"
+    }
+   }
+  ]
+ },
+ {
+  "day": 2,
+  "events": [
+   {
+    "eventType": "PORT",
+    "date": "2027-05-08T07:00:00",
+    "order": 1,
+    "title": "Nassau, Bahamas",
+    "portInfo": {
+     "isTender": false,
+     "isEmbarkation": false,
+     "isDisembarkation": false,
+     "isOverNight": false,
+     "dailySchedule": "7:00 AM - 5:00 PM",
+     "code": "NAS"
+    }
+   }
+  ]
+ },
+ {
+  "day": 3,
+  "events": [
+   {
+    "eventType": "PORT",
+    "date": "2027-05-09T07:00:00",
+    "order": 1,
+    "title": "Great Stirrup Cay, Bahamas",
+    "portInfo": {
+     "isTender": false,
+     "isEmbarkation": false,
+     "isDisembarkation": false,
+     "isOverNight": false,
+     "dailySchedule": "7:00 AM - 5:00 PM",
+     "code": "NPI"
+    }
+   }
+  ]
+ },
+ {
+  "day": 4,
+  "events": [
+   {
+    "eventType": "PORT",
+    "date": "2027-05-10T07:00:00",
+    "order": 1,
+    "title": "Miami, Florida",
+    "portInfo": {
+     "isTender": false,
+     "isEmbarkation": false,
+     "isDisembarkation": true,
+     "isOverNight": false,
+     "dailySchedule": "7:00 AM",
+     "code": "MIA"
+    }
+   }
+  ]
+ }
+]

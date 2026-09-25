@@ -18,6 +18,7 @@ The daily sync (`python -m app.sync`, run by `deploy/quotes-sync.timer`) pulls e
 | Princess | ~2,000 sailings, ~2 s | Every category, plus Princess Plus / Premier | No (fallback only) |
 | Holland America | ~1,200 sailings, ~4 s | Every category, plus Have It All | No (fallback only) |
 | Disney | ~960 sailings, ~40 s | Every category incl. guarantees, priced for the party's ages | No (fallback only) |
+| Norwegian | ~2,000 sailings, ~11 min (one tax lookup per sailing) | Every category code incl. The Haven; Free at Sea as add-ons | No (fallback only) |
 | Carnival | ~2,900 sailings, ~4 min | Booking API (one call per room class) | No (fallback only) |
 
 Timings are from a datacenter server. "Fallback only" means the provider switches to Cloudflare Browser Rendering automatically if the line starts blocking direct requests.
