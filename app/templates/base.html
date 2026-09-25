@@ -9,10 +9,14 @@
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="/quotes">{{ settings.business_name }}<small>Quote Builder</small></a>
-    <a class="btn" href="/quotes/new">New quote</a>
+    <a class="brand" href="/search">{{ settings.business_name }}<small>Quote Builder</small></a>
+    <nav class="row">
+      <a href="/search">Search sailings</a>
+      <a href="/quotes">Quotes</a>
+      <a class="btn" href="/quotes/new">New quote</a>
+    </nav>
   </header>
-  <main>
+  <main class="{% block main_class %}{% endblock %}">
     {% block content %}{% endblock %}
   </main>
 </body>

@@ -1,0 +1,683 @@
+{
+ "data": {
+  "cabinCategoriesAvailability": [
+   {
+    "cabinSeqNo": 1,
+    "availableCategories": [
+     {
+      "code": "INSIDER",
+      "name": "Insider",
+      "submetas": [
+       {
+        "code": "IN",
+        "name": "The Insider",
+        "isAvailable": true,
+        "attributes": [
+         "Interior Cabin"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": "BASE",
+         "totalPrice": {
+          "amount": 2150,
+          "discount": 914,
+          "currencyCode": "USD",
+          "originalAmount": 3064
+         }
+        },
+        "fareClassContents": [
+         {
+          "fareClass": "BASE",
+          "totalPrice": {
+           "amount": 2150,
+           "currencyCode": "USD",
+           "originalAmount": 3064
+          }
+         },
+         {
+          "fareClass": "ESSENTIAL",
+          "totalPrice": {
+           "amount": 2240,
+           "currencyCode": "USD",
+           "originalAmount": 3204
+          }
+         },
+         {
+          "fareClass": "PREMIUM",
+          "totalPrice": {
+           "amount": 2870,
+           "currencyCode": "USD",
+           "originalAmount": 3834
+          }
+         }
+        ]
+       },
+       {
+        "code": "IZ",
+        "name": " Insider Lock It In Rate",
+        "isAvailable": true,
+        "attributes": [
+         "No changes or modifications",
+         "Guaranteed Insider or above",
+         "Cabin assigned closer to sail date",
+         "May be an Accessible Cabin"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 1806,
+          "discount": 730,
+          "currencyCode": "USD",
+          "originalAmount": 2536
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "I4",
+        "name": "Social Insider",
+        "isAvailable": false,
+        "attributes": [
+         "Two lower & two hideaway beds"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": null,
+          "discount": null,
+          "currencyCode": null,
+          "originalAmount": null
+         }
+        },
+        "fareClassContents": null
+       },
+       {
+        "code": "I1",
+        "name": "Solo Insider",
+        "isAvailable": false,
+        "attributes": [
+         "Perfect for 1 Sailor"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": null,
+          "discount": null,
+          "currencyCode": null,
+          "originalAmount": null
+         }
+        },
+        "fareClassContents": null
+       }
+      ]
+     },
+     {
+      "code": "SEA VIEW",
+      "name": "Sea View",
+      "submetas": [
+       {
+        "code": "VW",
+        "name": "The Sea View",
+        "isAvailable": true,
+        "attributes": [
+         "Porthole window sea-to-sky views"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": "BASE",
+         "totalPrice": {
+          "amount": 2882,
+          "discount": 1308,
+          "currencyCode": "USD",
+          "originalAmount": 4190
+         }
+        },
+        "fareClassContents": [
+         {
+          "fareClass": "BASE",
+          "totalPrice": {
+           "amount": 2882,
+           "currencyCode": "USD",
+           "originalAmount": 4190
+          }
+         },
+         {
+          "fareClass": "ESSENTIAL",
+          "totalPrice": {
+           "amount": 3010,
+           "currencyCode": "USD",
+           "originalAmount": 4388
+          }
+         },
+         {
+          "fareClass": "PREMIUM",
+          "totalPrice": {
+           "amount": 3640,
+           "currencyCode": "USD",
+           "originalAmount": 5018
+          }
+         }
+        ]
+       },
+       {
+        "code": "VZ",
+        "name": "Sea View Lock It In Rate",
+        "isAvailable": true,
+        "attributes": [
+         "No changes or modifications",
+         "Porthole window sea-to-sky views",
+         "Guaranteed Sea View cabin or above",
+         "Cabin assigned closer to sail date",
+         "May be an Accessible Cabin"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 2646,
+          "discount": 1182,
+          "currencyCode": "USD",
+          "originalAmount": 3828
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "V1",
+        "name": "Solo Sea View",
+        "isAvailable": false,
+        "attributes": [
+         "Porthole window sea-to-sky views"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": null,
+          "discount": null,
+          "currencyCode": null,
+          "originalAmount": null
+         }
+        },
+        "fareClassContents": null
+       }
+      ]
+     },
+     {
+      "code": "SEA TERRACE",
+      "name": "Sea Terrace",
+      "submetas": [
+       {
+        "code": "TX",
+        "name": "XL Sea Terrace",
+        "isAvailable": true,
+        "attributes": [
+         "Private balcony with hammock",
+         "Bigger bathroom with roomier shower"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": "BASE",
+         "totalPrice": {
+          "amount": 3744,
+          "discount": 1772,
+          "currencyCode": "USD",
+          "originalAmount": 5516
+         }
+        },
+        "fareClassContents": [
+         {
+          "fareClass": "BASE",
+          "totalPrice": {
+           "amount": 3744,
+           "currencyCode": "USD",
+           "originalAmount": 5516
+          }
+         },
+         {
+          "fareClass": "ESSENTIAL",
+          "totalPrice": {
+           "amount": 3920,
+           "currencyCode": "USD",
+           "originalAmount": 5788
+          }
+         },
+         {
+          "fareClass": "PREMIUM",
+          "totalPrice": {
+           "amount": 4550,
+           "currencyCode": "USD",
+           "originalAmount": 6418
+          }
+         }
+        ]
+       },
+       {
+        "code": "TC",
+        "name": "Central Sea Terrace",
+        "isAvailable": true,
+        "attributes": [
+         "Private balcony with hammock",
+         "Sleep & chill cabin transformation",
+         "Glam station"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": "BASE",
+         "totalPrice": {
+          "amount": 3412,
+          "discount": 1594,
+          "currencyCode": "USD",
+          "originalAmount": 5006
+         }
+        },
+        "fareClassContents": [
+         {
+          "fareClass": "BASE",
+          "totalPrice": {
+           "amount": 3412,
+           "currencyCode": "USD",
+           "originalAmount": 5006
+          }
+         },
+         {
+          "fareClass": "ESSENTIAL",
+          "totalPrice": {
+           "amount": 3570,
+           "currencyCode": "USD",
+           "originalAmount": 5250
+          }
+         },
+         {
+          "fareClass": "PREMIUM",
+          "totalPrice": {
+           "amount": 4200,
+           "currencyCode": "USD",
+           "originalAmount": 5880
+          }
+         }
+        ]
+       },
+       {
+        "code": null,
+        "name": "Sea Terrace",
+        "isAvailable": true,
+        "attributes": [
+         "Private balcony with hammock"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": null,
+          "discount": null,
+          "currencyCode": null,
+          "originalAmount": null
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "TR",
+        "name": "The Sea Terrace",
+        "isAvailable": true,
+        "attributes": [
+         "Private balcony with hammock",
+         "Fair & Flexible rates:",
+         "Voyage date changes allowed ",
+         "Update names or transfer voyage"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": "BASE",
+         "totalPrice": {
+          "amount": 3214,
+          "discount": 1486,
+          "currencyCode": "USD",
+          "originalAmount": 4700
+         }
+        },
+        "fareClassContents": [
+         {
+          "fareClass": "BASE",
+          "totalPrice": {
+           "amount": 3214,
+           "currencyCode": "USD",
+           "originalAmount": 4700
+          }
+         },
+         {
+          "fareClass": "ESSENTIAL",
+          "totalPrice": {
+           "amount": 3360,
+           "currencyCode": "USD",
+           "originalAmount": 4928
+          }
+         },
+         {
+          "fareClass": "PREMIUM",
+          "totalPrice": {
+           "amount": 3990,
+           "currencyCode": "USD",
+           "originalAmount": 5558
+          }
+         }
+        ]
+       },
+       {
+        "code": "TL",
+        "name": "Limited View Sea Terrace",
+        "isAvailable": true,
+        "attributes": [
+         "Private balcony with partial view",
+         "Terrace hammock",
+         "Sleep & chill cabin transformation",
+         "Glam station"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": "BASE",
+         "totalPrice": {
+          "amount": 3078,
+          "discount": 1416,
+          "currencyCode": "USD",
+          "originalAmount": 4494
+         }
+        },
+        "fareClassContents": [
+         {
+          "fareClass": "BASE",
+          "totalPrice": {
+           "amount": 3078,
+           "currencyCode": "USD",
+           "originalAmount": 4494
+          }
+         },
+         {
+          "fareClass": "ESSENTIAL",
+          "totalPrice": {
+           "amount": 3220,
+           "currencyCode": "USD",
+           "originalAmount": 4712
+          }
+         },
+         {
+          "fareClass": "PREMIUM",
+          "totalPrice": {
+           "amount": 3850,
+           "currencyCode": "USD",
+           "originalAmount": 5342
+          }
+         }
+        ]
+       },
+       {
+        "code": "TZ",
+        "name": "Sea Terrace Lock it in Rate",
+        "isAvailable": true,
+        "attributes": [
+         "No changes or modifications",
+         "Can be a limited view cabin",
+         "Cabin assigned closer to sailing",
+         "May be an Accessible Cabin"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 2926,
+          "discount": 1334,
+          "currencyCode": "USD",
+          "originalAmount": 4260
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "TS",
+        "name": "Sea Terrace: (Slightly) Smaller Balcony",
+        "isAvailable": false,
+        "attributes": [
+         "Limited view cabin",
+         "Select cabins have two hammocks",
+         "Same interior as The Sea Terrace"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": null,
+          "discount": null,
+          "currencyCode": null,
+          "originalAmount": null
+         }
+        },
+        "fareClassContents": null
+       }
+      ]
+     },
+     {
+      "code": "ROCKSTAR SUITES",
+      "name": "RockStar Quarters",
+      "submetas": [
+       {
+        "code": "SB",
+        "name": "Brilliant Suite",
+        "isAvailable": true,
+        "attributes": [
+         "Larger interior space",
+         "Richard\u2019s Rooftop access",
+         "Large luxurious shower",
+         "Stocked & ready to rock in-room bar",
+         "Early/Priority booking access"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 7700,
+          "discount": 250,
+          "currencyCode": "USD",
+          "originalAmount": 7950
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "SCP",
+        "name": "Cheeky Corner Suite",
+        "isAvailable": true,
+        "attributes": [
+         "Larger interior space",
+         "Richard\u2019s Rooftop Access",
+         "Interior corner sofa",
+         "Stocked & ready to rock in-room bar",
+         "Early/Priority booking access"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 8400,
+          "discount": 250,
+          "currencyCode": "USD",
+          "originalAmount": 8650
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "SS",
+        "name": "Seriously Suite",
+        "isAvailable": true,
+        "attributes": [
+         "Larger interior space",
+         "Richard\u2019s Rooftop access",
+         "Large luxurious shower",
+         "Stocked & ready to rock in-room bar",
+         "Early/Priority booking access"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 7420,
+          "discount": 250,
+          "currencyCode": "USD",
+          "originalAmount": 7670
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "SAP",
+        "name": "Sweet Aft Suite",
+        "isAvailable": true,
+        "attributes": [
+         "Larger interior space",
+         "Richard\u2019s Rooftop Access",
+         "Large luxurious shower",
+         "Stocked to rock in-room bar",
+         "Early/Priority booking access"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 7840,
+          "discount": 250,
+          "currencyCode": "USD",
+          "originalAmount": 8090
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "RZ",
+        "name": "RockStar Lock it in Rate",
+        "isAvailable": false,
+        "attributes": [
+         "No changes or modifications",
+         "Richard\u2019s Rooftop access",
+         "Early/Priority booking access",
+         "Cabin assigned closer to sail date",
+         "May be an Accessible Cabin"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": null,
+          "discount": null,
+          "currencyCode": null,
+          "originalAmount": null
+         }
+        },
+        "fareClassContents": null
+       }
+      ]
+     },
+     {
+      "code": "MEGA ROCKSTAR",
+      "name": "Mega RockStar Quarters",
+      "submetas": [
+       {
+        "code": "SM",
+        "name": "Massive Suite",
+        "isAvailable": true,
+        "attributes": [
+         "Largest indoor/outdoor space",
+         "Daily spa pass and bar tab",
+         "Separate glam and music rooms ",
+         "Circular sofa for hosting",
+         "Extra half bathroom"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 17500,
+          "discount": 500,
+          "currencyCode": "USD",
+          "originalAmount": 18000
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "SF",
+        "name": "Fab Suite",
+        "isAvailable": true,
+        "attributes": [
+         "Daily spa pass and bar tab ",
+         "Peek-a-View outdoor shower",
+         "Extra half bathroom",
+         "Complimentary transfers or parking",
+         "Bottomless in-room bar"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 13720,
+          "discount": 500,
+          "currencyCode": "USD",
+          "originalAmount": 14220
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "SP",
+        "name": "Posh Suite",
+        "isAvailable": true,
+        "attributes": [
+         "Bottomless in-room bar",
+         "Daily spa pass and bar tab",
+         "Peek-a-View outdoor shower",
+         "Extra half bathroom",
+         "Complimentary transfers or parking"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 12250,
+          "discount": 500,
+          "currencyCode": "USD",
+          "originalAmount": 12750
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "SG",
+        "name": "Gorgeous Suite",
+        "isAvailable": true,
+        "attributes": [
+         "Bottomless in-room bar",
+         "Daily spa pass and bar tab",
+         "Peek-a-View outdoor shower",
+         "Complimentary transfers or parking"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": 10570,
+          "discount": 500,
+          "currencyCode": "USD",
+          "originalAmount": 11070
+         }
+        },
+        "fareClassContents": []
+       },
+       {
+        "code": "MZ",
+        "name": "Mega RockStar Lock it in Rate",
+        "isAvailable": false,
+        "attributes": [
+         "No changes or modifications",
+         "Daily spa pass and bar tab",
+         "Complimentary transfers or parking",
+         "Cabin assigned closer to sail date",
+         "May be an Accessible Cabin"
+        ],
+        "lowestAvailablePrice": {
+         "fareClass": null,
+         "totalPrice": {
+          "amount": null,
+          "discount": null,
+          "currencyCode": null,
+          "originalAmount": null
+         }
+        },
+        "fareClassContents": null
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,279 @@
+{
+ "packages": [
+  {
+   "packageCode": "7NSJRP",
+   "packageName": "Southern Caribbean Cruise",
+   "startingPrice": {
+    "amount": 1806,
+    "taxAmount": 448,
+    "currencyCode": "USD",
+    "originalAmount": 2536,
+    "portFees": 0
+   },
+   "duration": 7,
+   "arrivalPortCode": "SJU",
+   "departurePortCode": "SJU",
+   "sailingList": [
+    {
+     "id": "SC2803117NSJRP",
+     "packageCode": "7NSJRP",
+     "startDate": "2028-03-11",
+     "endDate": "2028-03-18",
+     "startingPrice": {
+      "amount": 1806,
+      "taxAmount": 448,
+      "currencyCode": "USD",
+      "originalAmount": 2536,
+      "minPricedCategoryCode": "IZ",
+      "minPricedGenericCategoryCode": "INSIDER",
+      "portFees": 0
+     },
+     "ports": [
+      {
+       "code": "SJU",
+       "name": "San Juan, Puerto Rico",
+       "countryName": "USA",
+       "day": 1
+      },
+      {
+       "code": "STT",
+       "name": "Charlotte Amalie, St. Thomas",
+       "countryName": "U.S. Virgin Islands",
+       "day": 2
+      },
+      {
+       "code": "BGI",
+       "name": "Bridgetown, Barbados",
+       "countryName": "Barbados",
+       "day": 4
+      },
+      {
+       "code": "FDF",
+       "name": "Fort-de-France, Martinique",
+       "countryName": "Martinique",
+       "day": 5
+      },
+      {
+       "code": "RSU",
+       "name": "Roseau, Dominica",
+       "countryName": "Dominica",
+       "day": 6
+      },
+      {
+       "code": "SXM",
+       "name": "Philipsburg, St. Maarten",
+       "countryName": "St. Maarten",
+       "day": 7
+      },
+      {
+       "code": "SJU",
+       "name": "San Juan, Puerto Rico",
+       "countryName": "USA",
+       "day": 8
+      }
+     ],
+     "duration": 7,
+     "weekend": true,
+     "classificationCodes": [
+      "10%",
+      "WEEKEND"
+     ],
+     "isAccessible": true,
+     "shipCode": "SC",
+     "accessibilityTypes": [
+      "AMBULATORY",
+      "ACCESSIBLE"
+     ]
+    }
+   ]
+  },
+  {
+   "packageCode": "5NNYB",
+   "packageName": "Bermuda Overnight Cruise",
+   "startingPrice": {
+    "amount": 1834,
+    "taxAmount": 586,
+    "currencyCode": "USD",
+    "originalAmount": 2504,
+    "portFees": 0
+   },
+   "duration": 5,
+   "arrivalPortCode": "BOY",
+   "departurePortCode": "BOY",
+   "sailingList": [
+    {
+     "id": "VL2609275NNYB",
+     "packageCode": "5NNYB",
+     "startDate": "2026-09-27",
+     "endDate": "2026-10-02",
+     "startingPrice": {
+      "amount": 1834,
+      "taxAmount": 586,
+      "currencyCode": "USD",
+      "originalAmount": 2504,
+      "minPricedCategoryCode": "IN",
+      "minPricedGenericCategoryCode": "INSIDER",
+      "portFees": 0
+     },
+     "ports": [
+      {
+       "code": "BOY",
+       "name": "New York City, New York ",
+       "countryName": "USA",
+       "day": 1
+      },
+      {
+       "code": "KWF",
+       "name": "Royal Naval Dockyard, Bermuda",
+       "countryName": "Bermuda",
+       "day": 3
+      },
+      {
+       "code": "BOY",
+       "name": "New York City, New York ",
+       "countryName": "USA",
+       "day": 6
+      }
+     ],
+     "duration": 5,
+     "weekend": true,
+     "classificationCodes": [
+      "EATANDDRINK",
+      "WEEKEND"
+     ],
+     "isAccessible": true,
+     "shipCode": "VL",
+     "accessibilityTypes": [
+      "AMBULATORY",
+      "ACCESSIBLE"
+     ]
+    }
+   ]
+  },
+  {
+   "packageCode": "7NBVA",
+   "packageName": "Italy, French Riviera & Spain",
+   "startingPrice": {
+    "amount": 2786,
+    "taxAmount": 414,
+    "currencyCode": "USD",
+    "originalAmount": 4062,
+    "portFees": 0
+   },
+   "duration": 7,
+   "arrivalPortCode": "BCN",
+   "departurePortCode": "BCN",
+   "sailingList": [
+    {
+     "id": "RS2709127NBVA",
+     "packageCode": "7NBVA",
+     "startDate": "2027-09-12",
+     "endDate": "2027-09-19",
+     "startingPrice": {
+      "amount": 3626,
+      "taxAmount": 460,
+      "currencyCode": "USD",
+      "originalAmount": 5330,
+      "minPricedCategoryCode": "IZ",
+      "minPricedGenericCategoryCode": "INSIDER",
+      "portFees": 0
+     },
+     "ports": [
+      {
+       "code": "BCN",
+       "name": "Barcelona, Spain",
+       "countryName": "Spain",
+       "day": 1
+      },
+      {
+       "code": "VFM",
+       "name": "Nice (Villefranche), France",
+       "countryName": "France",
+       "day": 2
+      },
+      {
+       "code": "CIV",
+       "name": "Rome (Civitavecchia), Italy",
+       "countryName": "Italy",
+       "day": 3
+      },
+      {
+       "code": "SAL",
+       "name": "Amalfi Coast (Salerno), Italy",
+       "countryName": "Italy",
+       "day": 4
+      },
+      {
+       "code": "CTA",
+       "name": "Catania, Sicily, Italy",
+       "countryName": "Italy",
+       "day": 5
+      },
+      {
+       "code": "PMI",
+       "name": "Palma de Mallorca, Spain",
+       "countryName": "Spain",
+       "day": 7
+      },
+      {
+       "code": "BCN",
+       "name": "Barcelona, Spain",
+       "countryName": "Spain",
+       "day": 8
+      }
+     ],
+     "duration": 7,
+     "weekend": true,
+     "classificationCodes": [
+      "WEEKEND"
+     ],
+     "isAccessible": true,
+     "shipCode": "RS",
+     "accessibilityTypes": [
+      "AMBULATORY",
+      "ACCESSIBLE"
+     ]
+    }
+   ]
+  }
+ ],
+ "genericCategoryCodes": [
+  {
+   "genericCategoryCode": "MEGA ROCKSTAR",
+   "maxOccupancy": 4,
+   "amount": 5752,
+   "taxAmount": 416,
+   "portFees": 0
+  },
+  {
+   "genericCategoryCode": "INSIDER",
+   "maxOccupancy": 3,
+   "amount": 714,
+   "taxAmount": 364,
+   "portFees": 0
+  },
+  {
+   "genericCategoryCode": "SEA VIEW",
+   "maxOccupancy": 3,
+   "amount": 894,
+   "taxAmount": 364,
+   "portFees": 0
+  },
+  {
+   "genericCategoryCode": "SEA TERRACE",
+   "maxOccupancy": 4,
+   "amount": 1074,
+   "taxAmount": 364,
+   "portFees": 0
+  },
+  {
+   "genericCategoryCode": "ROCKSTAR SUITES",
+   "maxOccupancy": 2,
+   "amount": 3192,
+   "taxAmount": 414,
+   "portFees": 0
+  }
+ ],
+ "defaultPackages": [],
+ "defaultGenericCategoryCodes": []
+}

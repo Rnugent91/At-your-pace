@@ -239,3 +239,66 @@ def test_falls_back_to_cloudflare_when_blocked():
     api_calls = [c for c in cf.calls if c.get("addScriptTag")]
     assert api_calls and all(c["url"].startswith(SITES["ocean"].base) for c in api_calls)
     assert any(path.endswith("DnPSailingDetails") for path, _ in backend.posts)
+
+
+# ── Bulk catalog ────────────────────────────────────────────────────────
+
+
+def test_catalog_rows_from_full_info():
+    from datetime import date
+
+    site = VikingSite()
+    p = provider(site)
+    rows = list(p.iter_catalog(today=date(2026, 10, 1)))
+    # Neptune (Sep 26) is in the past; other itineraries return no sailings; other sites 404.
+    assert [(r.ship, r.sail_date) for r in rows] == [("Viking Mira", "2026-10-14"), ("Viking Sea", "2026-10-16")]
+    mira, sea = rows
+    assert p.cruise_line == mira.cruise_line == "Viking"
+    assert mira.sailing_key == "OMI261014" and mira.ship_code == "OMI" and mira.nights == 7
+    assert mira.prices == {"Suite": 6799.0, "Balcony": 4349.0}
+    assert mira.taxes_fees_per_person == 0.0 and mira.currency == "USD"
+    assert mira.booking_url == "https://www.vikingcruises.com" + ITIN.replace("index.html", "pricing.html") + "?voyageId=OMI261014"
+    assert mira.ports[0] == "Barcelona" and mira.departure_port == "Barcelona"
+    # Reverse direction: ports come back reversed.
+    assert sea.departure_port == "Rome (Civitavecchia)" and sea.ports[0] == "Rome (Civitavecchia)"
+    # One full-info call per itinerary slug on the search page, with the promo code.
+    full = [b for path, b in site.posts if path.endswith("DnPCruiseFullInfo")]
+    assert sorted(b["cruiseId"] for b in full) == ["iconic-western-mediterranean", "italian-sojourn", "venice-adriatic-greece"]
+    assert all(b["offerCode"] == "EBS" for b in full)
+
+
+def test_class_prices_sold_out_and_from_fares():
+    ocean, river = SITES["ocean"], SITES["river"]
+    classes = ["Suite", "Balcony", "Ocean View", "Balcony"]
+    summary = [
+        {"typeName": "veranda", "lowestCruisePrice": 5999, "priceRange": "$5,999"},
+        {"typeName": "french balcony", "lowestCruisePrice": 4999, "priceRange": "$4,999"},
+        {"typeName": "suite", "lowestCruisePrice": 0, "priceRange": "$8,499"},
+    ]
+    assert VikingProvider.class_prices(river, {"stateroomSummary": summary}, classes) == {
+        "Suite": 8499.0, "Balcony": 4999.0, "Ocean View": None,  # standard not listed → sold out
+    }
+    assert VikingProvider.class_prices(ocean, {"soldOut": True}, ["Suite", "Balcony"]) == {"Suite": None, "Balcony": None}
+    # Far-out sailings only have a "from" fare: ocean ships are all-veranda, river is unknown.
+    far = {"soldOut": False, "stateroomSummary": [], "lowestPrice": 2799}
+    assert VikingProvider.class_prices(ocean, far, ["Suite", "Balcony"]) == {"Balcony": 2799.0}
+    assert VikingProvider.class_prices(river, far, ["Suite", "Balcony"]) == {}
+
+
+def test_catalog_retries_after_429():
+    from datetime import date
+
+    site = VikingSite()
+    hits = {"n": 0}
+
+    def flaky(request):
+        if request.method == "POST" and hits["n"] < 2:
+            hits["n"] += 1
+            return httpx.Response(429, headers={"retry-after": "1"})
+        return site(request)
+
+    p = VikingProvider(CloudflareBrowser("", ""), http=httpx.Client(transport=httpx.MockTransport(flaky)))
+    slept = []
+    p._sleep = slept.append
+    rows = list(p.iter_catalog(today=date(2026, 10, 1)))
+    assert len(rows) == 2 and slept and all(s <= 30 for s in slept)

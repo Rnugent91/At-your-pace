@@ -1,0 +1,207 @@
+{
+ "rooms": [
+  {
+   "outcome": "ROOM_FOUND",
+   "request": {
+    "adultCount": 2,
+    "childCount": 0,
+    "editMode": true
+   },
+   "options": {
+    "stateroomTypes": [
+     {
+      "code": "INTERIOR",
+      "name": "Inside",
+      "stateroomSubtypes": [
+       {
+        "code": "IS",
+        "name": "Inside Stateroom",
+        "guarantee": true,
+        "categoryCode": "I2",
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 1932,
+          "subtotal": 1057,
+          "taxesAndFees": 236.4,
+          "total": 1293.4
+         },
+         "perPersonAmount": 646.7
+        }
+       }
+      ]
+     },
+     {
+      "code": "OUTSIDE",
+      "name": "Ocean View",
+      "stateroomSubtypes": [
+       {
+        "code": "Y",
+        "name": "Ocean View Stateroom",
+        "guarantee": true,
+        "categoryCode": "Y",
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 1876,
+          "subtotal": 1022,
+          "taxesAndFees": 236.4,
+          "total": 1258.4
+         },
+         "perPersonAmount": 629.2
+        }
+       },
+       {
+        "code": "OS",
+        "name": "Ocean View",
+        "guarantee": false,
+        "categoryCode": "O2",
+        "roomsLeft": 1,
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 2160,
+          "subtotal": 1200,
+          "taxesAndFees": 236.4,
+          "total": 1436.4
+         },
+         "perPersonAmount": 718.2
+        }
+       }
+      ]
+     },
+     {
+      "code": "BALCONY",
+      "name": "Veranda",
+      "stateroomSubtypes": [
+       {
+        "code": "EX",
+        "name": "Infinite Veranda Stateroom",
+        "guarantee": true,
+        "categoryCode": "EX",
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 2356,
+          "subtotal": 1222,
+          "taxesAndFees": 236.4,
+          "total": 1458.4
+         },
+         "perPersonAmount": 729.2
+        }
+       },
+       {
+        "code": "PV",
+        "name": "Deluxe Porthole View with Veranda",
+        "guarantee": false,
+        "categoryCode": "P2",
+        "roomsLeft": 3,
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 2780,
+          "subtotal": 1487,
+          "taxesAndFees": 236.4,
+          "total": 1723.4
+         },
+         "perPersonAmount": 861.7
+        }
+       },
+       {
+        "code": "EG",
+        "name": "Edge Stateroom with Infinite Veranda",
+        "guarantee": false,
+        "categoryCode": "E2",
+        "roomsLeft": 10,
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 2822,
+          "subtotal": 1513,
+          "taxesAndFees": 236.4,
+          "total": 1749.4
+         },
+         "perPersonAmount": 874.7
+        }
+       }
+      ]
+     },
+     {
+      "code": "CONCIERGE",
+      "name": "Concierge Class",
+      "stateroomSubtypes": [
+       {
+        "code": "XC",
+        "name": "Concierge Class",
+        "guarantee": true,
+        "categoryCode": "XC",
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 2516,
+          "subtotal": 1322,
+          "taxesAndFees": 236.4,
+          "total": 1558.4
+         },
+         "perPersonAmount": 779.2
+        }
+       }
+      ]
+     },
+     {
+      "code": "AQUA",
+      "name": "AquaClass",
+      "stateroomSubtypes": [
+       {
+        "code": "XA",
+        "name": "AquaClass",
+        "guarantee": true,
+        "categoryCode": "XA",
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 4116,
+          "subtotal": 2322,
+          "taxesAndFees": 236.4,
+          "total": 2558.4
+         },
+         "perPersonAmount": 1279.2
+        }
+       }
+      ]
+     },
+     {
+      "code": "DELUXE",
+      "name": "The Retreat",
+      "stateroomSubtypes": [
+       {
+        "code": "S2",
+        "name": "Sky Suite",
+        "guarantee": false,
+        "categoryCode": "S1",
+        "roomsLeft": 1,
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 7892,
+          "subtotal": 4532,
+          "taxesAndFees": 236.4,
+          "total": 4768.4
+         },
+         "perPersonAmount": 2384.2
+        }
+       },
+       {
+        "code": "SY",
+        "name": "Sunset Sky Suite",
+        "guarantee": false,
+        "categoryCode": "SS",
+        "roomsLeft": 1,
+        "pricing": {
+         "invoice": {
+          "cruiseFare": 8660,
+          "subtotal": 5012,
+          "taxesAndFees": 236.4,
+          "total": 5248.4
+         },
+         "perPersonAmount": 2624.2
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

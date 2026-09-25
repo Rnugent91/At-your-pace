@@ -22,8 +22,10 @@ an msccruisesusa.com page loaded through Cloudflare Browser Rendering.
 import json
 import logging
 import re
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 from urllib.parse import unquote, urlencode
 
 import httpx
@@ -31,11 +33,13 @@ from bs4 import BeautifulSoup
 
 from ..cf_browser import BrowserRenderingError, CloudflareBrowser
 from ..models import AddOn, ItineraryDay, SailingResearch, Stateroom
-from .base import ProviderError, ResearchRequest
+from .base import CatalogSailing, ProviderError, ResearchRequest
 
 log = logging.getLogger(__name__)
 
 SEARCH_URL = "https://algoliabff-prod-eastus2-001.msccruises.com/v4/search/itineraries"
+# Same index, but one hit per cruise instead of one per itinerary (used by the catalog).
+CRUISES_URL = "https://algoliabff-prod-eastus2-001.msccruises.com/v1/search/cruises/"
 ITINERARY_URL = "https://services.msccruises.com/itinerary/data/{cid}/"
 SITE = "https://www.msccruisesusa.com"
 
@@ -131,6 +135,19 @@ def onboard_credit(hit: dict) -> Optional[int]:
     return int(m.group(1)) if m else None
 
 
+# itemDesc experience codes → MSC experience names (verified against the Booking SPA).
+EXPERIENCES = {"1": "Bella", "2": "Fantastica", "3": "Aurea", "YC": "Yacht Club"}
+
+
+def experience(hit: dict) -> Optional[str]:
+    """`itemDesc` like "OBS_SB100USD#EXP2B#..." → "Fantastica"."""
+    for token in re.split(r"[#_;]", hit.get("itemDesc") or ""):
+        m = re.fullmatch(r"EXP(YC|\d)B?", token)
+        if m:
+            return EXPERIENCES.get(m.group(1))
+    return None
+
+
 def _money(v: float) -> str:
     return f"${v:,.0f}" if float(v).is_integer() else f"${v:,.2f}"
 
@@ -143,10 +160,15 @@ def _time(t: Optional[str]) -> Optional[str]:
 class MSCProvider:
     name = "MSC Cruises (live)"
 
-    def __init__(self, cf: CloudflareBrowser, http: Optional[httpx.Client] = None):
+    cruise_line = "MSC"
+
+    def __init__(self, cf: CloudflareBrowser, http: Optional[httpx.Client] = None, workers: int = 6):
         self.cf = cf
-        self.http = http or httpx.Client(timeout=30, headers=BROWSER_HEADERS)
+        self.http = http or httpx.Client(timeout=60, headers=BROWSER_HEADERS)
+        self.workers = workers
+        self.browser_batch = 10  # URLs per Cloudflare page load (responses land in the returned HTML)
         self._use_browser = False
+        self._sleep = time.sleep
 
     def handles(self, cruise_line: str) -> bool:
         return "msc" in cruise_line.lower()
@@ -213,23 +235,11 @@ class MSCProvider:
             warnings.append("The MSC itinerary (ports and times) could not be loaded.")
 
         facets = (facets_raw.get("facets") if isinstance(facets_raw, dict) else None) or {}
-        macros = [m for m in MACRO_CATEGORIES if m[0] in (facets.get("macroCategory.key") or {})]
-        price_types = sorted(facets.get("priceType") or {}) or [""]
-        if not facets.get("macroCategory.key"):
-            macros = MACRO_CATEGORIES
-
-        queries = [(m, t) for m in macros for t in price_types]
-        results = self._get_many([
-            self._query_url(cruiseIdList=cid, noofAdults=adults, hitsPerPage=5, macroCategory=m[0], priceTypes=t)
-            for m, t in queries
-        ])
-        fares: dict[str, list[dict]] = {}
-        for (m, _), raw in zip(queries, results):
-            for h in (raw or {}).get("hits", []) if isinstance(raw, dict) else []:
-                if h.get("cruiseID") == cid and (h.get("macroCategory") or {}).get("key") == m[0]:
-                    fares.setdefault(m[0], []).append(h)
-
+        fares = self.fetch_fares(cid, adults, facets)
         research.staterooms, deltas = self.build_staterooms(fares, booking_url)
+        rooms = self.build_room_types(fares, booking_url)
+        if rooms:
+            research.staterooms = rooms  # one row per MSC category code; class lead-ins are the fallback
         missing = [label for key, _, label in MACRO_CATEGORIES if key not in fares]
         if missing:
             warnings.append(
@@ -245,13 +255,57 @@ class MSCProvider:
             research.addons.append(drinks)
         return research
 
+    # ── Fares ────────────────────────────────────────────────────────────
+
+    def fetch_fares(self, cid: str, adults: int, facets: dict) -> dict[str, list[dict]]:
+        """Every fare hit for the cruise, grouped by macro category.
+
+        The search collapses results to one hit per cruise, so we ask for one
+        category code at a time: an exact-phrase query ("BR1") matches the hit's
+        category key (unquoted, 2-letter codes prefix-match words like "Bahamas").
+        One cruise-only and one Drinks & Wi-Fi query per code, run in parallel.
+        """
+        codes = sorted(facets.get("category.key") or {})
+        price_types = sorted(facets.get("priceType") or {})
+        common = {"cruiseIdList": cid, "noofAdults": adults, "hitsPerPage": 5}
+        fares: dict[str, list[dict]] = {}
+
+        def keep(raw: Any, check) -> None:
+            for h in (raw or {}).get("hits", []) if isinstance(raw, dict) else []:
+                if h.get("cruiseID") == cid and check(h):
+                    fares.setdefault((h.get("macroCategory") or {}).get("key"), []).append(h)
+
+        if codes and price_types:
+            # Which fare types are the drinks bundle? One tiny query per type tells us.
+            samples = self._get_many([self._query_url(priceTypes=t, **{**common, "hitsPerPage": 1})
+                                      for t in price_types])
+            drinks_types = {t for t, raw in zip(price_types, samples)
+                            if isinstance(raw, dict) and raw.get("hits") and is_drinks_fare(raw["hits"][0])}
+            groups = [g for g in (sorted(set(price_types) - drinks_types), sorted(drinks_types)) if g]
+            queries = [(c, g) for c in codes for g in groups]
+            results = self._get_many([
+                self._query_url(query=f'"{c}"', priceTypes=",".join(g), **common) for c, g in queries
+            ])
+            for (c, _), raw in zip(queries, results):
+                keep(raw, lambda h, c=c: (h.get("category") or {}).get("key") == c)
+            if fares:
+                return fares
+
+        # Fallback: class lead-ins only (one query per class and fare type).
+        macros = [m for m in MACRO_CATEGORIES if m[0] in (facets.get("macroCategory.key") or {})] or MACRO_CATEGORIES
+        queries = [(m[0], t) for m in macros for t in (price_types or [""])]
+        results = self._get_many([self._query_url(macroCategory=m, priceTypes=t, **common) for m, t in queries])
+        for (m, _), raw in zip(queries, results):
+            keep(raw, lambda h, m=m: (h.get("macroCategory") or {}).get("key") == m)
+        return fares
+
     # ── Transport ────────────────────────────────────────────────────────
 
-    def _query_url(self, **params: Any) -> str:
+    def _query_url(self, _url: str = SEARCH_URL, **params: Any) -> str:
         base = {"country": "US", "lang": "en", "includeResults": "true", "includeFacets": "false",
                 "page": 0, "sortBy": "price", "sortOrder": "asc"}
         base.update({k: v for k, v in params.items() if v not in (None, "")})
-        return SEARCH_URL + "?" + urlencode(base)
+        return _url + "?" + urlencode(base)
 
     def _search(self, **params: Any) -> dict:
         raw = self._get_many([self._query_url(**params)])[0]
@@ -260,10 +314,16 @@ class MSCProvider:
         return raw
 
     def _get_many(self, urls: list[str]) -> list[Any]:
-        """JSON for each URL (None where one failed). Direct first; browser once direct is blocked."""
+        """JSON for each URL (None where one failed). Direct first, a few in parallel;
+        through the Cloudflare browser once direct is blocked."""
+        if not urls:
+            return []
         if not self._use_browser:
             try:
-                return [self._get_direct(u) for u in urls]
+                if len(urls) == 1:
+                    return [self._get_direct(urls[0])]
+                with ThreadPoolExecutor(max_workers=min(self.workers, len(urls))) as pool:
+                    return list(pool.map(self._get_direct, urls))
             except _Blocked as exc:
                 log.warning("MSC direct API blocked (%s); switching to Cloudflare browser", exc)
                 if not self.cf.configured:
@@ -271,21 +331,34 @@ class MSCProvider:
                         f"MSC blocked the request ({exc}). Set CLOUDFLARE_ACCOUNT_ID/API_TOKEN."
                     ) from exc
                 self._use_browser = True
-        return self._get_via_browser(urls)
+        chunks = [urls[i:i + self.browser_batch] for i in range(0, len(urls), self.browser_batch)]
+        if len(chunks) == 1:
+            return self._get_via_browser(chunks[0])
+        with ThreadPoolExecutor(max_workers=min(self.workers, len(chunks))) as pool:
+            return [r for part in pool.map(self._get_via_browser, chunks) for r in part]
 
     def _get_direct(self, url: str) -> Any:
-        try:
-            resp = self.http.get(url, headers=BROWSER_HEADERS)
-        except httpx.HTTPError as exc:
-            raise _Blocked(str(exc)) from exc
-        if resp.status_code in (401, 403, 429):
-            raise _Blocked(f"HTTP {resp.status_code}")
-        if resp.status_code != 200:
-            return None
-        try:
-            return resp.json()
-        except ValueError:
-            raise _Blocked("non-JSON response")
+        for attempt in range(4):
+            try:
+                resp = self.http.get(url, headers=BROWSER_HEADERS)
+            except httpx.HTTPError as exc:
+                if attempt < 3:
+                    self._sleep(2 ** attempt)
+                    continue
+                raise _Blocked(str(exc)) from exc
+            if resp.status_code in (429, 502, 503, 504) and attempt < 3:
+                retry = resp.headers.get("retry-after", "")
+                self._sleep(float(retry) if retry.isdigit() else 2 ** attempt)
+                continue
+            if resp.status_code in (401, 403, 429):
+                raise _Blocked(f"HTTP {resp.status_code}")
+            if resp.status_code != 200:
+                return None
+            try:
+                return resp.json()
+            except ValueError:
+                raise _Blocked("non-JSON response")
+        return None
 
     def _get_via_browser(self, urls: list[str]) -> list[Any]:
         # Load an msccruisesusa.com page (Akamai cookies, real browser) and run the
@@ -426,3 +499,120 @@ class MSCProvider:
             description=desc,
             source=source,
         )
+
+    @staticmethod
+    def build_room_types(fares: dict[str, list[dict]], source: str) -> list[Stateroom]:
+        """One Stateroom per MSC category code (e.g. BR1), cruise-only fare, with the
+        Drinks & Wi-Fi fare for the same code in the notes."""
+        by_code: dict[str, list[dict]] = {}
+        for hits in fares.values():
+            for h in hits:
+                code = (h.get("category") or {}).get("key")
+                if code and (h.get("prices") or {}).get("availability", True):
+                    by_code.setdefault(code, []).append(h)
+        order = {key: i for i, (key, _, _) in enumerate(MACRO_CATEGORIES)}
+        price = lambda h: (h.get("prices") or {}).get("adultPrice") or 0  # noqa: E731
+        rows = []
+        for code, hits in by_code.items():
+            cruise_only = [h for h in hits if not is_drinks_fare(h)]
+            if not cruise_only:
+                continue
+            base = min(cruise_only, key=lambda h: (price(h), -(onboard_credit(h) or 0)))
+            macro = (base.get("macroCategory") or {}).get("key")
+            category, label = next(((c, lbl) for k, c, lbl in MACRO_CATEGORIES if k == macro), ("Other", macro or "Stateroom"))
+            exp = experience(base)
+            name = label if exp in (None, "Yacht Club") and macro == "YTC" else f"{label} {exp}" if exp else label
+            total = float(price(base))
+            taxes = float((base.get("prices") or {}).get("portCharges") or 0)
+            notes = [f"Cruise-only fare ({base.get('priceType') or 'MSC'}): MSC shows {_money(total)} pp incl. "
+                     f"{_money(taxes)} taxes & fees."]
+            drinks = [h for h in hits if is_drinks_fare(h)]
+            if drinks:
+                with_drinks = float(price(min(drinks, key=price)))
+                if macro == "YTC" or with_drinks <= total:
+                    notes.append(f"With Drinks & Wi-Fi: {_money(with_drinks)} pp — already included in this fare.")
+                else:
+                    notes.append(f"With Drinks & Wi-Fi: {_money(with_drinks)} pp incl. taxes "
+                                 f"(+{_money(with_drinks - total)} pp).")
+            obc = onboard_credit(base)
+            if obc:
+                notes.append(f"Includes ${obc} onboard credit.")
+            rows.append((order.get(macro, 9), total, Stateroom(
+                category=category,
+                name=f"{name} ({code})",
+                code=code,
+                price_per_person=round(total - taxes, 2),
+                taxes_fees_per_person=taxes,
+                sold_out=False,
+                notes=" ".join(notes),
+                source=source,
+            )))
+        return [r for _, _, r in sorted(rows, key=lambda r: (r[0], r[1], r[2].code))]
+
+    # ── Bulk catalog ─────────────────────────────────────────────────────
+
+    def iter_catalog(self) -> Iterator[CatalogSailing]:
+        """Every bookable MSC sailing sold on the US site, with lead-in fares per class.
+
+        One facet call lists the ships; then per ship one /v1/search/cruises call per
+        room class (hitsPerPage=1000; a ship has ~100-250 sailings), so ~5 calls per ship.
+        (The /v4 itineraries search collapses to one sailing per itinerary, so it can't be used.)
+        Cheapest fare per class is the cruise-only fare (the drinks bundle only ever
+        costs more, or the same for Yacht Club).
+        """
+        raw = self._search(noofAdults=2, hitsPerPage=1, includeFacets="true")
+        ships = sorted(((raw.get("facets") or {}).get("shipCd.key") or {}))
+        if not ships:
+            raise ProviderError("MSC search returned no ships")
+        jobs = [(ship, key) for ship in ships for key, _, _ in MACRO_CATEGORIES]
+        url = lambda ship, key, page=0: self._query_url(  # noqa: E731
+            CRUISES_URL, ship=ship, macroCategory=key, noofAdults=2, hitsPerPage=1000, page=page)
+        results = self._get_many([url(ship, key) for ship, key in jobs])
+        calls = 1 + len(jobs)
+        pages: dict[tuple[str, str], list[dict]] = {}
+        for job, res in zip(jobs, results):
+            hits = list((res or {}).get("hits", [])) if isinstance(res, dict) else []
+            if res is None:
+                log.warning("MSC catalog: no data for ship %s / %s", *job)
+            n_pages = (res or {}).get("nbPages") or 1 if isinstance(res, dict) else 1
+            for page in range(1, n_pages):  # a ship has ~100-250 sailings, so rarely needed
+                more = self._get_many([url(*job, page=page)])[0]
+                calls += 1
+                hits += (more or {}).get("hits", []) if isinstance(more, dict) else []
+            pages[job] = hits
+        self.catalog_calls = calls
+
+        for ship in ships:
+            sailings: dict[str, dict] = {}
+            prices: dict[str, dict[str, float]] = {}
+            offered: set[str] = set()
+            for key, _, label in MACRO_CATEGORIES:
+                for h in pages.get((ship, key), []):
+                    cid = h.get("cruiseID")
+                    if not cid or (h.get("macroCategory") or {}).get("key") != key:
+                        continue
+                    sailings.setdefault(cid, h)
+                    offered.add(label)
+                    p = h.get("prices") or {}
+                    if p.get("availability", True) and p.get("adultPrice") is not None:
+                        prices.setdefault(cid, {})[label] = round(float(p["adultPrice"]) - float(p.get("portCharges") or 0), 2)
+            for cid, h in sorted(sailings.items(), key=lambda kv: (kv[1].get("departureStartDate") or "", kv[0])):
+                got = prices.get(cid, {})
+                taxes = (h.get("prices") or {}).get("portCharges")
+                yield CatalogSailing(
+                    cruise_line=self.cruise_line,
+                    sailing_key=cid,
+                    ship=(h.get("shipCd") or {}).get("value") or ship,
+                    sail_date=(h.get("departureStartDate") or "")[:10],
+                    nights=h.get("numberOfNights"),
+                    ship_code=ship,
+                    itinerary_name=h.get("itineraryName"),
+                    departure_port=(h.get("embkPort") or {}).get("value"),
+                    ports=[p.get("value") for p in h.get("visitingPorts") or []
+                           if p.get("key") != "SEADAY" and p.get("value")],
+                    booking_url=f"{SITE}/Booking?CruiseID={cid}",
+                    # Classes this ship sells but this sailing doesn't list → None (sold out).
+                    prices={lbl: got.get(lbl) for _, _, lbl in MACRO_CATEGORIES if lbl in offered},
+                    taxes_fees_per_person=float(taxes) if taxes is not None else None,
+                    currency="USD",
+                )

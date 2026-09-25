@@ -23,21 +23,21 @@
     <div class="grid">
       <div>
         <label for="cruise_line">Cruise line</label>
-        <input id="cruise_line" name="cruise_line" type="text" list="lines" value="Royal Caribbean" required>
+        <input id="cruise_line" name="cruise_line" type="text" list="lines" value="{{ pre.get('cruise_line', 'Royal Caribbean') }}" required>
         <datalist id="lines">{% for l in cruise_lines %}<option value="{{ l }}">{% endfor %}</datalist>
-        <div class="hint">Royal Caribbean prices come live from RC. Other lines are researched by Claude.</div>
+        <div class="hint">Lines with a live integration are priced straight from the cruise line; others are researched by Claude.</div>
       </div>
       <div>
         <label for="ship">Ship</label>
-        <input id="ship" name="ship" type="text" placeholder="Utopia of the Seas" required>
+        <input id="ship" name="ship" type="text" placeholder="Utopia of the Seas" value="{{ pre.get('ship', '') }}" required>
       </div>
-      <div><label for="sail_date">Sail date</label><input id="sail_date" name="sail_date" type="date" required></div>
+      <div><label for="sail_date">Sail date</label><input id="sail_date" name="sail_date" type="date" value="{{ pre.get('sail_date', '') }}" required></div>
     </div>
     <details style="margin-top:1rem">
       <summary>Optional: booking link or copied booking page</summary>
       <div style="margin-top:0.75rem">
         <label for="booking_url">Booking page link</label>
-        <input id="booking_url" name="booking_url" type="url" placeholder="https://…">
+        <input id="booking_url" name="booking_url" type="url" placeholder="https://…" value="{{ pre.get('booking_url', '') }}">
       </div>
       <div style="margin-top:0.75rem">
         <label for="pasted_text">Paste the booking page</label>

@@ -1,0 +1,98 @@
+{
+ "duration": 7,
+ "embarkDate": "2028-03-11",
+ "debarkDate": "2028-03-18",
+ "name": "Southern Caribbean Cruise",
+ "itinerary": [
+  {
+   "portName": "San Juan, Puerto Rico",
+   "itineraryDay": 1,
+   "departureTime": "06:00 PM",
+   "dayType": "embark",
+   "seaDay": false,
+   "index": 1,
+   "countryName": "USA",
+   "portCode": "SJU"
+  },
+  {
+   "portName": "Charlotte Amalie, St. Thomas",
+   "itineraryDay": 2,
+   "departureTime": "06:00 PM",
+   "arrivalTime": "08:00 AM",
+   "dayType": "port",
+   "seaDay": false,
+   "index": 2,
+   "countryName": "U.S. Virgin Islands",
+   "portCode": "STT"
+  },
+  {
+   "portName": "Sailing",
+   "itineraryDay": 3,
+   "dayType": "sailing",
+   "seaDay": true,
+   "index": 3,
+   "countryName": ""
+  },
+  {
+   "portName": "Bridgetown",
+   "itineraryDay": 4,
+   "departureTime": "06:00 PM",
+   "arrivalTime": "08:00 AM",
+   "dayType": "port",
+   "seaDay": false,
+   "index": 4,
+   "countryName": "Barbados",
+   "portCode": "BGI"
+  },
+  {
+   "portName": "Fort-de-France",
+   "itineraryDay": 5,
+   "departureTime": "05:00 PM",
+   "arrivalTime": "08:00 AM",
+   "dayType": "port",
+   "seaDay": false,
+   "index": 5,
+   "countryName": "Martinique",
+   "portCode": "FDF"
+  },
+  {
+   "portName": "Roseau",
+   "itineraryDay": 6,
+   "departureTime": "05:00 PM",
+   "arrivalTime": "08:00 AM",
+   "dayType": "port",
+   "seaDay": false,
+   "index": 6,
+   "countryName": "Dominica",
+   "portCode": "RSU"
+  },
+  {
+   "portName": "Philipsburg",
+   "itineraryDay": 7,
+   "departureTime": "05:00 PM",
+   "arrivalTime": "08:00 AM",
+   "dayType": "port",
+   "seaDay": false,
+   "index": 7,
+   "countryName": "St. Maarten",
+   "portCode": "SXM"
+  },
+  {
+   "portName": "San Juan, Puerto Rico",
+   "itineraryDay": 8,
+   "arrivalTime": "06:30 AM",
+   "dayType": "debark",
+   "seaDay": false,
+   "index": 8,
+   "countryName": "USA",
+   "arrivalPortMessage": "\ud83d\udce3 Please allow up to an hour for the Gangway to open",
+   "portCode": "SJU"
+  }
+ ],
+ "voyageId": "SC2803117NSJRP",
+ "packageCode": "7NSJRP",
+ "ship": {
+  "code": "SC",
+  "name": "Scarlet Lady"
+ }
+}

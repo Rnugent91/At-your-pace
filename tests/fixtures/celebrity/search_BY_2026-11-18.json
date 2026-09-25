@@ -2,6 +2,7 @@
  "data": {
   "cruiseSearch": {
    "results": {
+    "total": 1,
     "cruises": [
      {
       "id": "BY04FLL-4187031086",
@@ -9,6 +10,8 @@
        {
         "id": "BY04W200_2026-11-18",
         "sailDate": "2026-11-18",
+        "startDate": "2026-11-18",
+        "endDate": "2026-11-22",
         "taxesAndFees": {
          "value": 118.2
         },
@@ -17,13 +20,9 @@
          {
           "price": {
            "value": 646.7,
-           "netAmount": 646.7,
            "originalAmount": 1084.2,
            "taxesAndFeesAmount": 118.2,
-           "areTaxesAndFeesIncluded": true,
-           "currency": {
-            "code": "USD"
-           }
+           "areTaxesAndFeesIncluded": true
           },
           "stateroomClass": {
            "id": "INTERIOR",
@@ -33,13 +32,9 @@
          {
           "price": {
            "value": 629.2,
-           "netAmount": 629.2,
            "originalAmount": 1056.2,
            "taxesAndFeesAmount": 118.2,
-           "areTaxesAndFeesIncluded": true,
-           "currency": {
-            "code": "USD"
-           }
+           "areTaxesAndFeesIncluded": true
           },
           "stateroomClass": {
            "id": "OUTSIDE",
@@ -49,13 +44,9 @@
          {
           "price": {
            "value": 729.2,
-           "netAmount": 729.2,
            "originalAmount": 1296.2,
            "taxesAndFeesAmount": 118.2,
-           "areTaxesAndFeesIncluded": true,
-           "currency": {
-            "code": "USD"
-           }
+           "areTaxesAndFeesIncluded": true
           },
           "stateroomClass": {
            "id": "BALCONY",
@@ -65,13 +56,9 @@
          {
           "price": {
            "value": 779.2,
-           "netAmount": 779.2,
            "originalAmount": 1376.2,
            "taxesAndFeesAmount": 118.2,
-           "areTaxesAndFeesIncluded": true,
-           "currency": {
-            "code": "USD"
-           }
+           "areTaxesAndFeesIncluded": true
           },
           "stateroomClass": {
            "id": "CONCIERGE",
@@ -81,13 +68,9 @@
          {
           "price": {
            "value": 1279.2,
-           "netAmount": 1279.2,
            "originalAmount": 2176.2,
            "taxesAndFeesAmount": 118.2,
-           "areTaxesAndFeesIncluded": true,
-           "currency": {
-            "code": "USD"
-           }
+           "areTaxesAndFeesIncluded": true
           },
           "stateroomClass": {
            "id": "AQUA",
@@ -97,13 +80,9 @@
          {
           "price": {
            "value": 2384.2,
-           "netAmount": 2384.2,
            "originalAmount": 4064.2,
            "taxesAndFeesAmount": 118.2,
-           "areTaxesAndFeesIncluded": true,
-           "currency": {
-            "code": "USD"
-           }
+           "areTaxesAndFeesIncluded": true
           },
           "stateroomClass": {
            "id": "DELUXE",

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ s.ship }} · {{ s.sail_date }}{% endblock %}
+{% block content %}
+<p class="small"><a href="/search">← Search</a></p>
+<div class="row">
+  <div>
+    <h1>{{ s.ship }}</h1>
+    <p class="muted" style="margin:0">{{ s.line }} · {{ s.sail_date | nice_date }} · {{ s.nights or '?' }} nights · from {{ s.departure_port or '?' }}</p>
+  </div>
+  <span class="spacer"></span>
+  <a class="btn" href="/quotes/new?cruise_line={{ s.line | urlencode }}&ship={{ s.ship | urlencode }}&sail_date={{ s.sail_date }}&booking_url={{ (s.booking_url or '') | urlencode }}">Build a quote</a>
+</div>
+
+<div class="card" style="margin-top:1rem">
+  <h2>{{ s.itinerary_name or 'Itinerary' }}</h2>
+  {% if s.ports %}<p>{% if s.departure_port and s.ports[0] != s.departure_port %}{{ s.departure_port }} → {% endif %}{{ s.ports | join(' → ') }}</p>{% endif %}
+  <p class="small muted">
+    {% if not s.active %}<b>No longer listed by the cruise line</b> (sold out or departed). {% endif %}
+    First seen {{ s.first_seen[:10] }} · last checked {{ s.last_seen[:10] }} · sailing id {{ s.sailing_key }}
+    {% if s.booking_url %} · <a href="{{ s.booking_url }}" target="_blank" rel="noopener">View on the cruise line's site</a>{% endif %}
+  </p>
+</div>
+
+<div class="card table-wrap">
+  <h2>Price per room class</h2>
+  <table>
+    <thead><tr><th>Room class</th><th class="num">Fare pp</th><th class="num">Change</th><th class="num">Taxes &amp; fees pp</th></tr></thead>
+    <tbody>
+    {% for c, v in s.prices.items() %}
+      <tr><td>{{ c }}</td>
+        <td class="num">{% if v is none %}<span class="sold">sold out</span>{% else %}{{ v | money(s.currency) }}{% endif %}</td>
+        <td class="num">{% if c in s.deltas %}<span class="{{ 'down' if s.deltas[c] < 0 else 'up' }}">{{ '▼' if s.deltas[c] < 0 else '▲' }} {{ (s.deltas[c] | abs) | money(s.currency) }}</span>{% endif %}</td>
+        <td class="num">{{ s.taxes_fees | money(s.currency) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="small muted">Cheapest available fare in each class, per person for 2 guests sharing{% if s.price_changed_on %}. Last change {{ s.price_changed_on | nice_date }}{% endif %}.</p>
+</div>
+
+<div class="card table-wrap" id="rooms">
+  <div class="row">
+    <h2 style="margin:0">Individual room types</h2>
+    <span class="spacer"></span>
+    <form class="inline" method="post" action="/sailings/{{ s.line | urlencode }}/{{ s.sailing_key | urlencode }}/rooms"><button class="btn ghost" type="submit">Check room prices now</button></form>
+    {% if s.watched %}
+    <form class="inline" method="post" action="/sailings/{{ s.line | urlencode }}/{{ s.sailing_key | urlencode }}/unwatch"><button class="btn ghost" type="submit">Stop watching</button></form>
+    {% else %}
+    <form class="inline" method="post" action="/sailings/{{ s.line | urlencode }}/{{ s.sailing_key | urlencode }}/watch"><button class="btn" type="submit">Watch daily</button></form>
+    {% endif %}
+  </div>
+  {% if s.watched %}<p class="small muted">Watched: room types are re-priced every day{% if s.rooms_checked_at %}, last {{ s.rooms_checked_at[:16] | replace('T', ' ') }} UTC{% endif %}.</p>{% endif %}
+  {% if s.rooms_error %}<div class="warn">Last room check failed: {{ s.rooms_error }}</div>{% endif %}
+  {% if rooms %}
+  <table>
+    <thead><tr><th>Room type</th><th>Class</th><th class="num">Fare pp</th><th class="num">Change</th><th class="num">Since first seen</th><th>Seen</th></tr></thead>
+    <tbody>
+    {% for r in rooms %}
+      <tr><td>{{ r.room }}</td><td class="small">{{ r.category }}</td>
+        <td class="num">{% if r.price is none %}<span class="sold">sold out</span>{% else %}{{ r.price | money(s.currency) }}{% endif %}</td>
+        <td class="num">{% if r.prev_price is not none and r.price is not none and r.price != r.prev_price %}{% set d = r.price - r.prev_price %}<span class="{{ 'down' if d < 0 else 'up' }}">{{ '▼' if d < 0 else '▲' }} {{ (d | abs) | money(s.currency) }}</span>{% endif %}</td>
+        <td class="num">{% if r.first_price is not none and r.price is not none and r.price != r.first_price %}{% set d = r.price - r.first_price %}<span class="{{ 'down' if d < 0 else 'up' }}">{{ '▼' if d < 0 else '▲' }} {{ (d | abs) | money(s.currency) }}</span>{% endif %}</td>
+        <td class="small muted">{{ r.observed_on }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Not checked yet. "Check room prices now" prices every room type on this sailing; it takes up to a minute. Refresh the page after.</p>
+  {% endif %}
+</div>
+
+{% if class_history %}
+<div class="card table-wrap">
+  <h2>Price history</h2>
+  <table>
+    <thead><tr><th>Date</th><th>Room class</th><th class="num">Fare pp</th></tr></thead>
+    <tbody>
+    {% for h in class_history | reverse %}
+      <tr><td class="small">{{ h.observed_on }}</td><td>{{ h.room_class }}</td>
+        <td class="num">{% if h.price is none %}<span class="sold">sold out</span>{% else %}{{ h.price | money(s.currency) }}{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="small muted">A row is recorded whenever a fare changes.</p>
+</div>
+{% endif %}
+{% endblock %}

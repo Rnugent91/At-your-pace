@@ -77,4 +77,25 @@ def run_research(
     return result, f"{primary.name} + {claude.name}"
 
 
-__all__ = ["CRUISE_LINES", "Provider", "ProviderError", "ResearchRequest", "run_research", "ClaudeResearchProvider"]
+def build_direct_providers(settings) -> list:
+    """Every live cruise-line integration. Shared by the web app and the daily sync."""
+    from ..cf_browser import CloudflareBrowser
+    from .carnival import CarnivalProvider
+    from .celebrity import CelebrityProvider
+    from .msc import MSCProvider
+    from .royal_caribbean import RoyalCaribbeanProvider
+    from .viking import VikingProvider
+    from .virgin import VirginVoyagesProvider
+
+    cf = CloudflareBrowser(settings.cf_account_id, settings.cf_api_token)
+    return [
+        RoyalCaribbeanProvider(cf, settings.rccl_graphql_url),
+        CelebrityProvider(cf),
+        VikingProvider(cf),
+        CarnivalProvider(cf),
+        MSCProvider(cf),
+        VirginVoyagesProvider(cf),
+    ]
+
+
+__all__ = ["build_direct_providers", "CRUISE_LINES", "Provider", "ProviderError", "ResearchRequest", "run_research", "ClaudeResearchProvider"]

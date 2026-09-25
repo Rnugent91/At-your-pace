@@ -36,10 +36,11 @@ Inclusive Value), so taxes_fees_per_person is 0.
 import json
 import logging
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import Optional
+from typing import Iterator, Optional
 from urllib.parse import unquote, urljoin, urlparse
 
 import httpx
@@ -47,7 +48,7 @@ from bs4 import BeautifulSoup
 
 from ..cf_browser import USER_AGENT, BrowserRenderingError, CloudflareBrowser
 from ..models import AddOn, ItineraryDay, SailingResearch, Stateroom
-from .base import ProviderError, ResearchRequest
+from .base import CatalogSailing, ProviderError, ResearchRequest
 from .royal_caribbean import parse_price
 
 log = logging.getLogger(__name__)
@@ -80,6 +81,24 @@ EXPEDITION_SHIPS = {"polaris", "octantis"}
 
 API_VERSION = "11"  # Viking's SendAjax appends ?v=11
 SCAN_WORKERS = 6
+RETRIES = 3
+BACKOFF = 1.0  # seconds; doubled per retry, or Retry-After when Viking sends one
+
+# Fields the catalog needs from each DnPCruiseFullInfo sailing (the in-page browser
+# script trims to these so a rendered page stays small).
+CATALOG_FIELDS = [
+    "DepartureDateString", "Ship", "PackageCode", "CruiseName", "sailingKey", "cruiseDirection",
+    "cruiseDurationWithYear", "shipType", "soldOut", "stateroomSummary", "lowestPrice", "lowestAirPrice",
+]
+
+# DnPCruiseFullInfo stateroomSummary typeName → catalog room class.
+SUMMARY_CLASSES = {
+    "veranda": "Balcony",
+    "french balcony": "Balcony",
+    "nordic balcony": "Balcony",
+    "suite": "Suite",
+    "standard": "Ocean View",
+}
 
 BROWSER_HEADERS = {
     "user-agent": USER_AGENT,
@@ -215,8 +234,14 @@ class VikingProvider:
         # Flipped once direct requests are refused, so later calls go straight to the browser.
         self._use_browser = False
 
+    cruise_line = "Viking"
+
     def handles(self, cruise_line: str) -> bool:
         return "viking" in cruise_line.lower()
+
+    @staticmethod
+    def _sleep(seconds: float) -> None:
+        time.sleep(seconds)
 
     # ── Entry point ──────────────────────────────────────────────────────
 
@@ -305,27 +330,42 @@ class VikingProvider:
             blocked = []
 
             def one(body):
-                try:
-                    resp = self.http.post(
-                        url,
-                        content=json.dumps({k: v for k, v in body.items() if not k.startswith("__")}),
-                        headers={
-                            "content-type": "application/json; charset=utf-8",
-                            "x-requested-with": "XMLHttpRequest",
-                            "origin": site.origin,
-                            "referer": site.base + "/",
-                        },
-                    )
-                except httpx.HTTPError as exc:
-                    blocked.append(str(exc))
-                    return None
-                if resp.status_code in (401, 403, 429):
-                    blocked.append(f"HTTP {resp.status_code}")
-                    return None
-                try:
-                    return resp.json() if resp.status_code == 200 else None
-                except ValueError:
-                    return None
+                payload = json.dumps({k: v for k, v in body.items() if not k.startswith("__")})
+                for attempt in range(RETRIES):
+                    try:
+                        resp = self.http.post(
+                            url,
+                            content=payload,
+                            headers={
+                                "content-type": "application/json; charset=utf-8",
+                                "x-requested-with": "XMLHttpRequest",
+                                "origin": site.origin,
+                                "referer": site.base + "/",
+                            },
+                        )
+                    except httpx.HTTPError as exc:
+                        if attempt == RETRIES - 1:
+                            blocked.append(str(exc))
+                            return None
+                        self._sleep(BACKOFF * 2**attempt)
+                        continue
+                    if resp.status_code == 429 or resp.status_code >= 500:
+                        if attempt == RETRIES - 1:
+                            if resp.status_code == 429:
+                                blocked.append("HTTP 429")
+                            return None
+                        retry_after = resp.headers.get("retry-after", "")
+                        wait = float(retry_after) if retry_after.isdigit() else BACKOFF * 2**attempt
+                        self._sleep(min(wait, 30))
+                        continue
+                    if resp.status_code in (401, 403):
+                        blocked.append(f"HTTP {resp.status_code}")
+                        return None
+                    try:
+                        return resp.json() if resp.status_code == 200 else None
+                    except ValueError:
+                        return None
+                return None
 
             if len(bodies) == 1:
                 out = [one(bodies[0])]
@@ -350,7 +390,10 @@ class VikingProvider:
             + "?v=" + API_VERSION + "',{method:'POST',headers:{'content-type':'application/json; charset=utf-8',"
             "'x-requested-with':'XMLHttpRequest'},body:JSON.stringify(bodies[i])}).then(function(x){return x.json();});"
             "if(r&&r.cruises&&bodies[i].__date){r.cruises=r.cruises.filter(function(c){"
-            "return c.DepartureDateString===bodies[i].__date;});r.calendar=null;}}catch(e){r=null;}out.push(r);}"
+            "return c.DepartureDateString===bodies[i].__date;});r.calendar=null;}"
+            "if(r&&r.cruises&&bodies[i].__slim){var keep=bodies[i].__slim;r.calendar=null;"
+            "r.cruises=r.cruises.map(function(c){var o={};keep.forEach(function(k){o[k]=c[k];});return o;});}"
+            "}catch(e){r=null;}out.push(r);}"
             "var d=document.createElement('div');d.id='qp-viking';"
             "d.setAttribute('data-json',encodeURIComponent(JSON.stringify(out)));document.body.appendChild(d);})();"
         )
@@ -656,3 +699,104 @@ class VikingProvider:
             r"\$(\d+(?:\.\d+)?)\s*USD\s*(?:per|/)\s*day", text, re.I
         )
         return float(m.group(1)) if m else None
+
+    # ── Bulk catalog ─────────────────────────────────────────────────────
+
+    def iter_catalog(self, today: Optional[date] = None) -> Iterator[CatalogSailing]:
+        """Every future Viking sailing (ocean, expedition, river) with lead-in fares per class.
+
+        One search page per product line (it embeds every itinerary slug), then one
+        DnPCruiseFullInfo call per itinerary, which lists all of its sailings with the
+        cheapest available fare per stateroom type. About 190 calls for the whole line.
+        """
+        cutoff = (today or date.today()).strftime("%Y%m%d")
+        seen: set[str] = set()
+        for site in SITES.values():
+            try:
+                results, offer = self.search_results(site)
+            except ProviderError as exc:
+                log.warning("Viking %s catalog search failed: %s", site.key, exc)
+                continue
+            itineraries: dict[str, dict] = {}
+            for r in results:
+                if r.get("TcmId"):
+                    itineraries.setdefault(r["TcmId"], r)
+            slugs = list(itineraries)
+            for i in range(0, len(slugs), SCAN_WORKERS):
+                chunk = slugs[i : i + SCAN_WORKERS]
+                bodies = [
+                    {"cruiseId": slug, "parameters": "", "offerCode": offer, "__slim": CATALOG_FIELDS}
+                    for slug in chunk
+                ]
+                try:
+                    datas = self.post_many(site, "/Core/DnPCruiseFullInfo", bodies)
+                except ProviderError as exc:
+                    log.warning("Viking %s catalog stopped: %s", site.key, exc)
+                    break
+                for slug, data in zip(chunk, datas):
+                    if not data:
+                        log.warning("Viking %s: no sailings for %s", site.key, slug)
+                        continue
+                    for row in self.catalog_rows(site, itineraries[slug], data, cutoff):
+                        if row.sailing_key not in seen:
+                            seen.add(row.sailing_key)
+                            yield row
+
+    @staticmethod
+    def catalog_rows(site: Site, result: dict, data: dict, cutoff: str) -> list[CatalogSailing]:
+        """CatalogSailings from one DnPCruiseFullInfo response (sailings on/after `cutoff`)."""
+        classes = [SUMMARY_CLASSES.get(t, category_for(t)[0]) for t in data.get("suiteTypes") or []]
+        page = urljoin(site.origin, (result.get("PageUrl") or "").split("?")[0])
+        pricing = page.replace("index.html", "pricing.html") if page.endswith("index.html") else page
+        cities = [c for c in result.get("Cities") or [] if c]
+        rows = []
+        for c in data.get("cruises") or []:
+            day = c.get("DepartureDateString") or ""
+            code = c.get("PackageCode")
+            if not code or not re.fullmatch(r"\d{8}", day) or day < cutoff:
+                continue
+            sail_date = f"{day[:4]}-{day[4:6]}-{day[6:]}"
+            direction = c.get("cruiseDirection") or result.get("Direction") or ""
+            ports = list(cities)
+            if ports and direction and direction != result.get("Direction"):
+                a, _, b = (result.get("Direction") or "").partition(" to ")
+                if direction == f"{b} to {a}":
+                    ports.reverse()
+            rows.append(
+                CatalogSailing(
+                    cruise_line="Viking",
+                    sailing_key=code,
+                    ship=c.get("shipType") or "",
+                    ship_code=c.get("Ship"),
+                    sail_date=sail_date,
+                    nights=nights_between(sail_date, c.get("cruiseDurationWithYear") or ""),
+                    itinerary_name=c.get("CruiseName") or result.get("CruiseName"),
+                    departure_port=direction.split(" to ")[0] or None,
+                    ports=ports,
+                    booking_url=f"{pricing}?voyageId={code}" if pricing else None,
+                    prices=VikingProvider.class_prices(site, c, classes),
+                    taxes_fees_per_person=0.0,  # Viking fares include port taxes & fees
+                    currency="USD",
+                )
+            )
+        return rows
+
+    @staticmethod
+    def class_prices(site: Site, sailing: dict, classes: list[str]) -> dict[str, Optional[float]]:
+        """Lead-in fare per class; classes Viking sells on the itinerary but not here are None (sold out)."""
+        summary = sailing.get("stateroomSummary") or []
+        if not summary and not sailing.get("soldOut"):
+            # Far-out sailings carry only a "from" fare, no per-class breakdown.
+            prices: dict[str, Optional[float]] = {}
+        else:
+            prices = {cls: None for cls in classes}
+        for s in summary:
+            cls = SUMMARY_CLASSES.get((s.get("typeName") or "").lower(), category_for(s.get("typeName") or "")[0])
+            price = s.get("lowestCruisePrice") or parse_price(s.get("priceRange"))
+            if price:
+                prices[cls] = min(float(price), prices.get(cls) or float("inf"))
+        if not summary and not sailing.get("soldOut") and site.key == "ocean" and sailing.get("lowestPrice"):
+            # Far-out ocean sailings only carry a "from" fare. Viking ocean ships are
+            # all-veranda, so the lowest fare is a veranda (Balcony) fare.
+            prices["Balcony"] = float(sailing["lowestPrice"])
+        return prices

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Search sailings{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block content %}
+<div class="row">
+  <h1>Search sailings</h1>
+  <span class="spacer"></span>
+  <form class="inline" method="post" action="/catalog/sync"><button class="btn ghost" type="submit">Sync all lines now</button></form>
+</div>
+<p class="muted small">Every sailing of every line with a live integration ({{ live_lines | join(", ") }}), refreshed daily. Prices are the cheapest fare per person in each room class, 2 guests sharing, before taxes. Watch a sailing to track its individual room types too.</p>
+{% if f.get('synced') %}<div class="warn">Sync started in the background. Refresh in a few minutes.</div>{% endif %}
+
+<div class="stat-row" style="margin-bottom:1rem">
+  {% for st in stats %}
+  <span class="stat{% if st.last_run and st.last_run.error %} err{% endif %}" title="{{ st.last_run.error if st.last_run and st.last_run.error else '' }}">
+    {{ st.line }}: <b>{{ '{:,}'.format(st.active or 0) }}</b> sailings{% if st.changed_today %} · {{ st.changed_today }} changed today{% endif %}
+    {% if st.last_run %}<span class="muted"> · synced {{ st.last_run.finished_at[:10] }}{% if st.last_run.error %} (failed){% endif %}</span>{% endif %}
+  </span>
+  {% else %}
+  <span class="muted small">No catalog yet. Press "Sync all lines now" (or wait for the daily sync).</span>
+  {% endfor %}
+</div>
+
+<form class="card filters" method="get" action="/search">
+  <div><label for="line">Cruise line</label>
+    <select id="line" name="line"><option value="">All lines</option>
+      {% for l in lines %}<option{% if f.get('line') == l %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div><label for="ship">Ship</label><input id="ship" name="ship" type="text" value="{{ f.get('ship','') }}" placeholder="Any ship"></div>
+  <div><label for="port">Port or region</label><input id="port" name="port" type="text" value="{{ f.get('port','') }}" placeholder="e.g. Cozumel, Alaska"></div>
+  <div><label for="date_from">Sailing from</label><input id="date_from" name="date_from" type="date" value="{{ f.get('date_from','') }}"></div>
+  <div><label for="date_to">Sailing to</label><input id="date_to" name="date_to" type="date" value="{{ f.get('date_to','') }}"></div>
+  <div><label for="nights_min">Nights</label>
+    <div class="row" style="flex-wrap:nowrap"><input id="nights_min" name="nights_min" type="number" min="1" value="{{ f.get('nights_min','') }}" placeholder="min" aria-label="Minimum nights">
+    <input name="nights_max" type="number" min="1" value="{{ f.get('nights_max','') }}" placeholder="max" aria-label="Maximum nights"></div></div>
+  <div><label for="room_class">Room class</label>
+    <select id="room_class" name="room_class"><option value="">Any (cheapest)</option>
+      {% for c in room_classes %}<option{% if f.get('room_class') == c %} selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label for="max_price">Max price pp</label><input id="max_price" name="max_price" type="number" min="0" step="1" value="{{ f.get('max_price','') }}"></div>
+  <div><label for="sort">Sort by</label>
+    <select id="sort" name="sort">
+      {% for k, label in [('date','Sail date'),('price','Lowest price'),('per_night','Lowest price per night'),('drop','Recent price changes')] %}
+      <option value="{{ k }}"{% if f.get('sort','date') == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select></div>
+  <label class="check"><input type="checkbox" name="dropped"{% if f.get('dropped') %} checked{% endif %}> Price dropped</label>
+  <label class="check"><input type="checkbox" name="watched"{% if f.get('watched') %} checked{% endif %}> Watched only</label>
+  <div><button class="btn" type="submit">Search</button> <a class="small" href="/search">Clear</a></div>
+</form>
+
+<p class="small muted">{{ '{:,}'.format(total) }} sailing{{ '' if total == 1 else 's' }} {% if pages > 1 %} · page {{ page }} of {{ pages }}{% endif %}</p>
+
+{% if rows %}
+<div class="card table-wrap">
+<table class="results">
+  <thead><tr>
+    <th>Sailing</th><th>Itinerary</th>
+    {% for c in ['Interior','Ocean View','Balcony','Suite'] %}<th class="num">{{ c }}</th>{% endfor %}
+    <th></th>
+  </tr></thead>
+  <tbody>
+  {% for s in rows %}
+  <tr>
+    <td><a href="/sailings/{{ s.line | urlencode }}/{{ s.sailing_key | urlencode }}"><b>{{ s.ship }}</b></a>{% if s.watched %} <span class="pill ready">watching</span>{% endif %}<br>
+      <span class="small">{{ s.sail_date | nice_date }} · {{ s.nights or '?' }} nights</span><br>
+      <span class="small muted">{{ s.line }}</span></td>
+    <td>{{ s.itinerary_name or '' }}<br><span class="small muted">from {{ s.departure_port or '?' }}</span>
+      {% if s.ports %}<div class="ports">{{ s.ports | join(' · ') }}</div>{% endif %}</td>
+    {% for c in ['Interior','Ocean View','Balcony','Suite'] %}
+    <td class="num">
+      {% if c in s.prices %}
+        {% if s.prices[c] is none %}<span class="sold">sold out</span>{% else %}{{ s.prices[c] | money(s.currency) }}{% endif %}
+        {% if c in s.deltas %}<span class="delta {{ 'down' if s.deltas[c] < 0 else 'up' }}">{{ '▼' if s.deltas[c] < 0 else '▲' }} {{ (s.deltas[c] | abs) | money(s.currency) }}</span>{% endif %}
+      {% else %}<span class="sold">—</span>{% endif %}
+    </td>
+    {% endfor %}
+    <td><a class="btn ghost" href="/quotes/new?cruise_line={{ s.line | urlencode }}&ship={{ s.ship | urlencode }}&sail_date={{ s.sail_date }}&booking_url={{ (s.booking_url or '') | urlencode }}">Quote</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if pages > 1 %}
+{% set base = query | replace('&page=' ~ page, '') | replace('page=' ~ page, '') %}
+<div class="pager">
+  {% if page > 1 %}<a href="/search?{{ base }}&page={{ page - 1 }}">← Previous</a>{% endif %}
+  <span class="small muted">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a href="/search?{{ base }}&page={{ page + 1 }}">Next →</a>{% endif %}
+</div>
+{% endif %}
+{% elif stats %}
+<div class="card"><p>No sailings match. Try widening the dates or clearing a filter.</p></div>
+{% endif %}
+{% endblock %}

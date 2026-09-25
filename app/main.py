@@ -16,19 +16,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import pdf
-from .cf_browser import CloudflareBrowser
 from .config import Settings, settings as default_settings
+from .catalog import CatalogStore
 from .db import QuoteStore
 from .demo import sample_research
 from .models import AddOnSelection, Quote
 from .pricing import compute_totals, default_quantity, price_changes, snapshot
-from .providers import CRUISE_LINES, ClaudeResearchProvider, ResearchRequest, run_research
+from .providers import CRUISE_LINES, ClaudeResearchProvider, ResearchRequest, build_direct_providers, run_research
 from .providers.claude_research import draft_client_intro
-from .providers.carnival import CarnivalProvider
-from .providers.celebrity import CelebrityProvider
-from .providers.msc import MSCProvider
-from .providers.royal_caribbean import RoyalCaribbeanProvider
-from .providers.viking import VikingProvider
 
 log = logging.getLogger(__name__)
 HERE = Path(__file__).parent
@@ -75,8 +70,8 @@ def create_app(
         claude_client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     claude = ClaudeResearchProvider(claude_client, settings.model)
     if direct_providers is None:
-        cf = CloudflareBrowser(settings.cf_account_id, settings.cf_api_token)
-        direct_providers = [RoyalCaribbeanProvider(cf, settings.rccl_graphql_url), CelebrityProvider(cf), VikingProvider(cf), CarnivalProvider(cf), MSCProvider(cf)]
+        direct_providers = build_direct_providers(settings)
+    catalog = CatalogStore(settings.data_dir)
 
     @app.middleware("http")
     async def same_origin_posts(request: Request, call_next):
@@ -155,7 +150,7 @@ def create_app(
 
     @app.get("/", dependencies=[Depends(require_login)])
     def home():
-        return RedirectResponse("/quotes", 303)
+        return RedirectResponse("/search", 303)
 
     @app.get("/quotes", response_class=HTMLResponse, dependencies=[Depends(require_login)])
     def list_quotes(request: Request):
@@ -166,7 +161,7 @@ def create_app(
         return templates.TemplateResponse(
             request, "new.html",
             {"cruise_lines": CRUISE_LINES, "default_fee": settings.default_tracking_fee,
-             "claude_ready": claude.configured, "demo": settings.demo_mode},
+             "claude_ready": claude.configured, "demo": settings.demo_mode, "pre": request.query_params},
         )
 
     @app.post("/quotes", dependencies=[Depends(require_login)])
@@ -291,6 +286,96 @@ def create_app(
     def delete(quote_id: str):
         store.delete(quote_id)
         return RedirectResponse("/quotes", 303)
+
+    # ── Master catalog: search every sailing, track prices ─────────────────
+
+    def _int(v) -> Optional[int]:
+        try:
+            return int(v) if v not in (None, "") else None
+        except ValueError:
+            return None
+
+    def _float(v) -> Optional[float]:
+        try:
+            return float(v) if v not in (None, "") else None
+        except ValueError:
+            return None
+
+    @app.get("/search", response_class=HTMLResponse, dependencies=[Depends(require_login)])
+    def search(request: Request):
+        qp = request.query_params
+        page = max(1, _int(qp.get("page")) or 1)
+        per_page = 100
+        filters = dict(
+            line=qp.get("line", ""), ship=qp.get("ship", "").strip(), port=qp.get("port", "").strip(),
+            date_from=qp.get("date_from", ""), date_to=qp.get("date_to", ""),
+            nights_min=_int(qp.get("nights_min")), nights_max=_int(qp.get("nights_max")),
+            room_class=qp.get("room_class", ""), max_price=_float(qp.get("max_price")),
+            dropped_only=qp.get("dropped") == "on", watched_only=qp.get("watched") == "on",
+            sort=qp.get("sort", "date"),
+        )
+        rows, total = catalog.search(**filters, limit=per_page, offset=(page - 1) * per_page)
+        return templates.TemplateResponse(
+            request, "search.html",
+            {"rows": rows, "total": total, "page": page, "pages": max(1, -(-total // per_page)),
+             "f": qp, "lines": CRUISE_LINES, "room_classes": catalog.room_classes(), "stats": catalog.stats(),
+             "live_lines": sorted({p.cruise_line for p in direct_providers if getattr(p, "cruise_line", None)}),
+             "query": str(request.url.query)},
+        )
+
+    def get_sailing(line: str, sailing_key: str) -> dict:
+        s = catalog.get(line, sailing_key)
+        if s is None:
+            raise HTTPException(404, "Sailing not found")
+        return s
+
+    @app.get("/sailings/{line}/{sailing_key:path}", response_class=HTMLResponse, dependencies=[Depends(require_login)])
+    def sailing_detail(request: Request, line: str, sailing_key: str):
+        s = get_sailing(line, sailing_key)
+        return templates.TemplateResponse(
+            request, "sailing.html",
+            {"s": s, "class_history": catalog.class_history(line, sailing_key),
+             "rooms": catalog.latest_rooms(line, sailing_key),
+             "room_history": catalog.room_history(line, sailing_key)},
+        )
+
+    def refresh_rooms_task(line: str, sailing_key: str) -> None:
+        from .sync import refresh_rooms
+
+        try:
+            refresh_rooms(catalog, direct_providers, line, sailing_key)
+        except Exception:
+            log.exception("Room refresh failed for %s %s", line, sailing_key)
+
+    @app.post("/sailings/{line}/{sailing_key:path}/watch", dependencies=[Depends(require_login)])
+    def watch_sailing(line: str, sailing_key: str, background: BackgroundTasks):
+        get_sailing(line, sailing_key)
+        catalog.watch(line, sailing_key)
+        background.add_task(refresh_rooms_task, line, sailing_key)
+        return RedirectResponse(f"/sailings/{line}/{sailing_key}", 303)
+
+    @app.post("/sailings/{line}/{sailing_key:path}/unwatch", dependencies=[Depends(require_login)])
+    def unwatch_sailing(line: str, sailing_key: str):
+        catalog.unwatch(line, sailing_key)
+        return RedirectResponse(f"/sailings/{line}/{sailing_key}", 303)
+
+    @app.post("/sailings/{line}/{sailing_key:path}/rooms", dependencies=[Depends(require_login)])
+    def refresh_sailing_rooms(line: str, sailing_key: str, background: BackgroundTasks):
+        get_sailing(line, sailing_key)
+        catalog.watch(line, sailing_key)  # room history is kept for watched sailings
+        background.add_task(refresh_rooms_task, line, sailing_key)
+        return RedirectResponse(f"/sailings/{line}/{sailing_key}#rooms", 303)
+
+    def sync_task(line: Optional[str]) -> None:
+        from .sync import sync_catalog
+
+        sync_catalog(catalog, direct_providers, line)
+
+    @app.post("/catalog/sync", dependencies=[Depends(require_login)])
+    async def sync_now(request: Request, background: BackgroundTasks):
+        f = await request.form()
+        background.add_task(sync_task, str(f.get("line") or "") or None)
+        return RedirectResponse("/search?synced=1", 303)
 
     def pdf_context(q: Quote) -> dict:
         if q.research is None:
