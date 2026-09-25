@@ -1,0 +1,744 @@
+{
+ "captured": "2026-09-25 from msccruisesusa.com APIs (trimmed)",
+ "search_ship_date": {
+  "hits": [
+   {
+    "cruiseID": "AM20270306MIAMIA",
+    "departureStartDate": "2027-03-06",
+    "shipCd": {
+     "key": "AM",
+     "value": "MSC World America"
+    },
+    "embkPort": {
+     "key": "MIA",
+     "value": "Miami, Florida"
+    },
+    "disembkPort": {
+     "key": "MIA",
+     "value": "Miami, Florida"
+    },
+    "itineraryName": "Caribbean & Bahamas",
+    "numberOfNights": 7,
+    "itinCd": "UVD5",
+    "category": {
+     "key": "IB",
+     "value": "Interior"
+    },
+    "macroCategory": {
+     "key": "INS",
+     "value": "Interior"
+    },
+    "priceType": "EZOB",
+    "priceCode": "EZOB103MNU",
+    "priceDesc": "CRUISE ONLY OBC INCLUDED",
+    "itemDesc": "OBS_SB080USD#EXP1",
+    "prices": {
+     "cabinPrice": 1528,
+     "adultPrice": 764,
+     "childPrice": 0,
+     "juniorPrice": 0,
+     "infantPrice": 0,
+     "availability": true,
+     "portCharges": 121
+    },
+    "noofAdults": 2
+   },
+   {
+    "cruiseID": "AM20270306MIAMI1",
+    "departureStartDate": "2027-03-06",
+    "shipCd": {
+     "key": "AM",
+     "value": "MSC World America"
+    },
+    "embkPort": {
+     "key": "MIA",
+     "value": "Miami, Florida"
+    },
+    "disembkPort": {
+     "key": "MIA",
+     "value": "Miami, Florida"
+    },
+    "itineraryName": "Caribbean & Bahamas",
+    "numberOfNights": 14,
+    "itinCd": "UVD6",
+    "category": {
+     "key": "IB",
+     "value": "Interior"
+    },
+    "macroCategory": {
+     "key": "INS",
+     "value": "Interior"
+    },
+    "priceType": "EZOB",
+    "priceCode": "EZOB103LEG",
+    "priceDesc": "CRUISE ONLY OBC INCLUDED",
+    "itemDesc": "OBS_EXP1#SB100USD",
+    "prices": {
+     "cabinPrice": 3182,
+     "adultPrice": 1591,
+     "childPrice": 0,
+     "juniorPrice": 0,
+     "infantPrice": 0,
+     "availability": true,
+     "portCharges": 176
+    },
+    "noofAdults": 2
+   }
+  ],
+  "nbHits": 2
+ },
+ "cruise_facets": {
+  "hits": [],
+  "facets": {
+   "priceType": {
+    "EZAT": 22,
+    "EZOB": 22,
+    "EZPF": 22
+   },
+   "macroCategory.key": {
+    "BAL": 36,
+    "OUT": 15,
+    "INS": 9,
+    "YTC": 6
+   }
+  }
+ },
+ "fares": {
+  "INS|EZAT": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "IB",
+      "value": "Interior"
+     },
+     "macroCategory": {
+      "key": "INS",
+      "value": "Interior"
+     },
+     "priceType": "EZAT",
+     "priceCode": "EZAT730GK",
+     "priceDesc": "ESCAPE TO SEA CRUISE ONLY",
+     "itemDesc": "OBS_EXP1",
+     "prices": {
+      "cabinPrice": 1528,
+      "adultPrice": 764,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "INS|EZOB": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "IB",
+      "value": "Interior"
+     },
+     "macroCategory": {
+      "key": "INS",
+      "value": "Interior"
+     },
+     "priceType": "EZOB",
+     "priceCode": "EZOB103MNU",
+     "priceDesc": "CRUISE ONLY OBC INCLUDED",
+     "itemDesc": "OBS_SB080USD#EXP1",
+     "prices": {
+      "cabinPrice": 1528,
+      "adultPrice": 764,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "INS|EZPF": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "IB",
+      "value": "Interior"
+     },
+     "macroCategory": {
+      "key": "INS",
+      "value": "Interior"
+     },
+     "priceType": "EZPF",
+     "priceCode": "EZPF65XOF",
+     "priceDesc": "CRUISE WITH DRINKS WIFI OBC",
+     "itemDesc": "OBS_EXP1#SB080USD#342PRN9#B1ITCAR",
+     "prices": {
+      "cabinPrice": 2312,
+      "adultPrice": 1156,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "OUT|EZAT": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "OB",
+      "value": "Ocean View"
+     },
+     "macroCategory": {
+      "key": "OUT",
+      "value": "Ocean View"
+     },
+     "priceType": "EZAT",
+     "priceCode": "EZAT730GK",
+     "priceDesc": "ESCAPE TO SEA CRUISE ONLY",
+     "itemDesc": "OBS_EXP1",
+     "prices": {
+      "cabinPrice": 1988,
+      "adultPrice": 994,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "OUT|EZOB": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "OB",
+      "value": "Ocean View"
+     },
+     "macroCategory": {
+      "key": "OUT",
+      "value": "Ocean View"
+     },
+     "priceType": "EZOB",
+     "priceCode": "EZOB103MNU",
+     "priceDesc": "CRUISE ONLY OBC INCLUDED",
+     "itemDesc": "OBS_SB080USD#EXP1",
+     "prices": {
+      "cabinPrice": 1988,
+      "adultPrice": 994,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "OUT|EZPF": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "OB",
+      "value": "Ocean View"
+     },
+     "macroCategory": {
+      "key": "OUT",
+      "value": "Ocean View"
+     },
+     "priceType": "EZPF",
+     "priceCode": "EZPF65XOF",
+     "priceDesc": "CRUISE WITH DRINKS WIFI OBC",
+     "itemDesc": "OBS_EXP1#SB080USD#342PRN9#B1ITCAR",
+     "prices": {
+      "cabinPrice": 2772,
+      "adultPrice": 1386,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "BAL|EZAT": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "BB",
+      "value": "Balcony"
+     },
+     "macroCategory": {
+      "key": "BAL",
+      "value": "Balcony"
+     },
+     "priceType": "EZAT",
+     "priceCode": "EZAT730GK",
+     "priceDesc": "ESCAPE TO SEA CRUISE ONLY",
+     "itemDesc": "OBS_EXP1",
+     "prices": {
+      "cabinPrice": 2248,
+      "adultPrice": 1124,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "BAL|EZOB": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "BB",
+      "value": "Balcony"
+     },
+     "macroCategory": {
+      "key": "BAL",
+      "value": "Balcony"
+     },
+     "priceType": "EZOB",
+     "priceCode": "EZOB103MNU",
+     "priceDesc": "CRUISE ONLY OBC INCLUDED",
+     "itemDesc": "OBS_SB100USD#EXP1",
+     "prices": {
+      "cabinPrice": 2248,
+      "adultPrice": 1124,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "BAL|EZPF": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "BB",
+      "value": "Balcony"
+     },
+     "macroCategory": {
+      "key": "BAL",
+      "value": "Balcony"
+     },
+     "priceType": "EZPF",
+     "priceCode": "EZPF65XOF",
+     "priceDesc": "CRUISE WITH DRINKS WIFI OBC",
+     "itemDesc": "OBS_SB100USD#EXP1#342PRN9#B1ITCAR",
+     "prices": {
+      "cabinPrice": 3032,
+      "adultPrice": 1516,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "YTC|EZAT": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "YIN",
+      "value": "MSC Yacht Club"
+     },
+     "macroCategory": {
+      "key": "YTC",
+      "value": "MSC Yacht Club"
+     },
+     "priceType": "EZAT",
+     "priceCode": "EZAT730GK",
+     "priceDesc": "ESCAPE TO SEA CRUISE ONLY",
+     "itemDesc": "OBS_SWE80EXP#EXPYCB#TRIOPR#SPABAEXP",
+     "prices": {
+      "cabinPrice": 7148,
+      "adultPrice": 3574,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "YTC|EZOB": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "YIN",
+      "value": "MSC Yacht Club"
+     },
+     "macroCategory": {
+      "key": "YTC",
+      "value": "MSC Yacht Club"
+     },
+     "priceType": "EZOB",
+     "priceCode": "EZOB103MNU",
+     "priceDesc": "CRUISE ONLY OBC INCLUDED",
+     "itemDesc": "OBS_SB250USD#SWE80EXP#TRIOPR#SPABAEXP#EXPYCB",
+     "prices": {
+      "cabinPrice": 7148,
+      "adultPrice": 3574,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  },
+  "YTC|EZPF": {
+   "hits": [
+    {
+     "cruiseID": "AM20270306MIAMIA",
+     "departureStartDate": "2027-03-06",
+     "shipCd": {
+      "key": "AM",
+      "value": "MSC World America"
+     },
+     "embkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "disembkPort": {
+      "key": "MIA",
+      "value": "Miami, Florida"
+     },
+     "itineraryName": "Caribbean & Bahamas",
+     "numberOfNights": 7,
+     "itinCd": "UVD5",
+     "category": {
+      "key": "YIN",
+      "value": "MSC Yacht Club"
+     },
+     "macroCategory": {
+      "key": "YTC",
+      "value": "MSC Yacht Club"
+     },
+     "priceType": "EZPF",
+     "priceCode": "EZPF65XOF",
+     "priceDesc": "CRUISE WITH DRINKS WIFI OBC",
+     "itemDesc": "OBS_SWE80EXP#TRIOPR#SPABAEXP#SB250USD#EXPYCB",
+     "prices": {
+      "cabinPrice": 7148,
+      "adultPrice": 3574,
+      "childPrice": 0,
+      "juniorPrice": 0,
+      "infantPrice": 0,
+      "availability": true,
+      "portCharges": 121
+     },
+     "noofAdults": 2
+    }
+   ]
+  }
+ },
+ "itinerary": {
+  "ItineraryName": "Eastern Caribbean & Bahamas",
+  "ItineraryCode": "UVD5",
+  "NumNights": 7,
+  "StartDate": "2027-03-06",
+  "EndDate": "2027-03-13",
+  "DeparturePort": "Miami, Florida",
+  "ArrivalPort": "Miami, Florida",
+  "CruiseId": "AM20270306MIAMIA",
+  "Ship": {
+   "ShipCode": "AM",
+   "ShipName": "MSC World America"
+  },
+  "Days": [
+   {
+    "Name": "Miami, Florida",
+    "Date": "2027-03-06",
+    "DayOfWeek": "Sat",
+    "ArrivalTime": "-",
+    "DepartureTime": "18:00",
+    "IsSeaDay": false,
+    "PortCode": "MIA",
+    "Country": "Florida"
+   },
+   {
+    "Name": "Day At Sea",
+    "Date": "2027-03-07",
+    "DayOfWeek": "Sun",
+    "ArrivalTime": "09:00",
+    "DepartureTime": "17:00",
+    "IsSeaDay": true,
+    "PortCode": "SEADAY",
+    "Country": "Dominican Republic"
+   },
+   {
+    "Name": "Puerto Plata, Dominican Republic",
+    "Date": "2027-03-08",
+    "DayOfWeek": "Mon",
+    "ArrivalTime": "09:00",
+    "DepartureTime": "17:00",
+    "IsSeaDay": false,
+    "PortCode": "POP",
+    "Country": "Dominican Republic"
+   },
+   {
+    "Name": "San Juan, Puerto Rico",
+    "Date": "2027-03-09",
+    "DayOfWeek": "Tue",
+    "ArrivalTime": "09:00",
+    "DepartureTime": "23:00",
+    "IsSeaDay": false,
+    "PortCode": "SJU",
+    "Country": "Puerto Rico"
+   },
+   {
+    "Name": "Day At Sea",
+    "Date": "2027-03-10",
+    "DayOfWeek": "Wed",
+    "ArrivalTime": "08:00",
+    "DepartureTime": "20:00",
+    "IsSeaDay": true,
+    "PortCode": "SEADAY",
+    "Country": "Bahamas"
+   },
+   {
+    "Name": "Day At Sea",
+    "Date": "2027-03-11",
+    "DayOfWeek": "Thu",
+    "ArrivalTime": "08:00",
+    "DepartureTime": "20:00",
+    "IsSeaDay": true,
+    "PortCode": "SEADAY",
+    "Country": "Bahamas"
+   },
+   {
+    "Name": "Ocean Cay MSC Marine Reserve, Bahamas",
+    "Date": "2027-03-12",
+    "DayOfWeek": "Fri",
+    "ArrivalTime": "08:00",
+    "DepartureTime": "20:00",
+    "IsSeaDay": false,
+    "PortCode": "1SC",
+    "Country": "Bahamas"
+   },
+   {
+    "Name": "Miami, Florida",
+    "Date": "2027-03-13",
+    "DayOfWeek": "Sat",
+    "ArrivalTime": "07:00",
+    "DepartureTime": "-",
+    "IsSeaDay": false,
+    "PortCode": "MIA",
+    "Country": "Florida"
+   }
+  ]
+ }
+}
