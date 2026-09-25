@@ -1,0 +1,193 @@
+{
+ "products": [
+  {
+   "id": "CFF14F",
+   "name": "Eastern/Western Caribbean Adventurer",
+   "trades": [
+    {
+     "id": "C",
+     "subTrades": [
+      {
+       "id": "CE"
+      }
+     ]
+    }
+   ],
+   "subTrades": [
+    {
+     "id": "CE"
+    }
+   ],
+   "cruises": [
+    {
+     "id": "G639A",
+     "productCode": "CZF",
+     "voyage": {
+      "id": "G639A",
+      "ports": [
+       "FLL",
+       "AC4",
+       "SJU",
+       "SXM",
+       "FLL",
+       "RTB",
+       "BZE",
+       "CZM",
+       "FLL"
+      ],
+      "ship": {
+       "id": "GP",
+       "version": 9
+      },
+      "sailDate": "20260926",
+      "duration": 14,
+      "startPortId": "FLL",
+      "endPortId": "FLL",
+      "oceanFlag": "E",
+      "oceanDine": "Y",
+      "sailFlag": "",
+      "upperBerthGuarFlag": ""
+     },
+     "shipCurrency": "",
+     "startDate": "20260926",
+     "endDate": "20261010"
+    },
+    {
+     "id": "U644A",
+     "productCode": "CZF",
+     "voyage": {
+      "id": "U644A",
+      "ports": [
+       "FLL",
+       "CZM",
+       "MH1",
+       "RTB",
+       "FLL",
+       "HM2",
+       "SJU",
+       "AC4",
+       "FLL"
+      ],
+      "ship": {
+       "id": "SU",
+       "version": 3
+      },
+      "sailDate": "20261115",
+      "duration": 14,
+      "startPortId": "FLL",
+      "endPortId": "FLL",
+      "oceanFlag": "E",
+      "oceanDine": "Y",
+      "sailFlag": "",
+      "upperBerthGuarFlag": ""
+     },
+     "shipCurrency": "USD",
+     "startDate": "20261115",
+     "endDate": "20261129"
+    }
+   ]
+  },
+  {
+   "id": "CFR07F",
+   "name": "Western Caribbean with Mexico",
+   "trades": [
+    {
+     "id": "C",
+     "subTrades": [
+      {
+       "id": "CW"
+      }
+     ]
+    }
+   ],
+   "subTrades": [
+    {
+     "id": "CW"
+    }
+   ],
+   "cruises": [
+    {
+     "id": "U644",
+     "productCode": "CWF",
+     "voyage": {
+      "id": "U644",
+      "ports": [
+       "FLL",
+       "CZM",
+       "MH1",
+       "RTB",
+       "FLL"
+      ],
+      "ship": {
+       "id": "SU",
+       "version": 3
+      },
+      "sailDate": "20261115",
+      "duration": 7,
+      "startPortId": "FLL",
+      "endPortId": "FLL",
+      "oceanFlag": "E",
+      "oceanDine": "Y",
+      "sailFlag": "",
+      "upperBerthGuarFlag": ""
+     },
+     "shipCurrency": "USD",
+     "startDate": "20261115",
+     "endDate": "20261122"
+    }
+   ]
+  },
+  {
+   "id": "AST070",
+   "name": "Inside Passage (Roundtrip Seattle)",
+   "trades": [
+    {
+     "id": "A",
+     "subTrades": [
+      {
+       "id": "AI"
+      }
+     ]
+    }
+   ],
+   "subTrades": [
+    {
+     "id": "AI"
+    }
+   ],
+   "cruises": [
+    {
+     "id": "4724",
+     "productCode": "AWS",
+     "voyage": {
+      "id": "4724",
+      "ports": [
+       "SEA",
+       "KTN",
+       "EN1",
+       "JNU",
+       "SGY",
+       "YYJ",
+       "SEA"
+      ],
+      "ship": {
+       "id": "ST",
+       "version": 1
+      },
+      "sailDate": "20270613",
+      "duration": 7,
+      "startPortId": "SEA",
+      "endPortId": "SEA",
+      "oceanFlag": "E",
+      "oceanDine": "Y",
+      "sailFlag": "",
+      "upperBerthGuarFlag": ""
+     },
+     "shipCurrency": "USD",
+     "startDate": "20270613",
+     "endDate": "20270620"
+    }
+   ]
+  }
+ ]
+}

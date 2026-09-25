@@ -1,0 +1,85 @@
+{
+ "ports": [
+  {
+   "id": "AC4",
+   "name": "Amber Cove, Dominican Republic",
+   "countryId": "DO"
+  },
+  {
+   "id": "BZE",
+   "name": "Belize City, Belize",
+   "countryId": "BZ"
+  },
+  {
+   "id": "MH1",
+   "name": "Costa Maya (Mahahual), Mexico",
+   "countryId": "MX"
+  },
+  {
+   "id": "CZM",
+   "name": "Cozumel, Mexico",
+   "countryId": "MX"
+  },
+  {
+   "id": "EN1",
+   "name": "Endicott Arm and Dawes Glacier (Scenic Cruising), Alaska",
+   "countryId": "US"
+  },
+  {
+   "id": "FLL",
+   "name": "Ft. Lauderdale, Florida",
+   "countryId": "US",
+   "isEmbark": true,
+   "isDisembark": true
+  },
+  {
+   "id": "JNU",
+   "name": "Juneau, Alaska",
+   "countryId": "US"
+  },
+  {
+   "id": "KTN",
+   "name": "Ketchikan, Alaska",
+   "countryId": "US"
+  },
+  {
+   "id": "HM2",
+   "name": "RelaxAway, Half Moon Cay",
+   "countryId": "BS"
+  },
+  {
+   "id": "RTB",
+   "name": "Roatan (Isla Tropicale), Honduras",
+   "countryId": "HN"
+  },
+  {
+   "id": "SJU",
+   "name": "San Juan, Puerto Rico",
+   "countryId": "PR",
+   "isEmbark": true,
+   "isDisembark": true
+  },
+  {
+   "id": "SEA",
+   "name": "Seattle, Washington",
+   "countryId": "US",
+   "isEmbark": true,
+   "isDisembark": true
+  },
+  {
+   "id": "SGY",
+   "name": "Skagway, Alaska",
+   "countryId": "US"
+  },
+  {
+   "id": "SXM",
+   "name": "St. Maarten",
+   "countryId": "AN"
+  },
+  {
+   "id": "YYJ",
+   "name": "Victoria, Canada",
+   "countryId": "CA"
+  }
+ ]
+}

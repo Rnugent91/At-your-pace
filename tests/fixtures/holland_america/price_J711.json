@@ -1,0 +1,860 @@
+{
+ "data": {
+  "sailingDate": "2027-01-10",
+  "roomTypes": [
+   {
+    "name": "Inside",
+    "categories": [
+     {
+      "name": "Inside",
+      "id": "NS_IN_IN",
+      "price": [
+       {
+        "tax": 160,
+        "price": 1254,
+        "launchPrice": 1484,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_IN_IN",
+        "basePrice": 1094,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 799,
+        "launchPrice": 1064,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_IN_IN",
+        "basePrice": 639,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ],
+        "id": "NS_IN",
+        "name": "Inside",
+        "useBestAvailable": true
+       }
+      ],
+      "subCategory": "N"
+     },
+     {
+      "name": "Spa Inside",
+      "id": "NS_IN_SIN",
+      "price": [
+       {
+        "tax": 160,
+        "price": 1394,
+        "launchPrice": 1594,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_IN_SIN",
+        "basePrice": 1234,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 939,
+        "launchPrice": 1174,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_IN_SIN",
+        "basePrice": 779,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": ""
+     }
+    ],
+    "id": "NS_IN",
+    "lowestPrice": {
+     "tax": 160,
+     "price": 799,
+     "launchPrice": 1064,
+     "fare": "QA1",
+     "classification": "restricted",
+     "category": "NS_IN_IN",
+     "basePrice": 639,
+     "baseTax": 0,
+     "flight": null,
+     "taxAndFeesCombined": true,
+     "promoCodes": [
+      "QA_USD"
+     ],
+     "active": true,
+     "includedPromos": [
+      "KR1"
+     ],
+     "subCategory": "N",
+     "id": "NS_IN",
+     "name": "Inside"
+    }
+   },
+   {
+    "name": "Ocean View",
+    "categories": [
+     {
+      "name": "Single",
+      "id": "NS_OV_SI",
+      "price": [],
+      "subCategory": ""
+     },
+     {
+      "name": "Ocean View",
+      "id": "NS_OV_OV",
+      "price": [
+       {
+        "tax": 160,
+        "price": 1404,
+        "launchPrice": 1749,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_OV_OV",
+        "basePrice": 1244,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 949,
+        "launchPrice": 1329,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_OV_OV",
+        "basePrice": 789,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": "F"
+     },
+     {
+      "name": "Spa Ocean View",
+      "id": "NS_OV_SOV",
+      "price": [
+       {
+        "tax": 160,
+        "price": 1109,
+        "launchPrice": 1469,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_OV_SOV",
+        "basePrice": 949,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": false,
+        "includedPromos": [
+         "KR1"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 1564,
+        "launchPrice": 0,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_OV_SOV",
+        "basePrice": 1404,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": false,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       }
+      ],
+      "subCategory": ""
+     },
+     {
+      "name": "Family Ocean View",
+      "id": "NS_OV_FOV",
+      "price": [
+       {
+        "tax": 160,
+        "price": 1604,
+        "launchPrice": 1919,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_OV_FOV",
+        "basePrice": 1444,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 1149,
+        "launchPrice": 1499,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_OV_FOV",
+        "basePrice": 989,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": ""
+     }
+    ],
+    "id": "NS_OV",
+    "lowestPrice": {
+     "tax": 160,
+     "price": 949,
+     "launchPrice": 1329,
+     "fare": "QA1",
+     "classification": "restricted",
+     "category": "NS_OV_OV",
+     "basePrice": 789,
+     "baseTax": 0,
+     "flight": null,
+     "taxAndFeesCombined": true,
+     "promoCodes": [
+      "QA_USD"
+     ],
+     "active": true,
+     "includedPromos": [
+      "KR1"
+     ],
+     "subCategory": "F"
+    }
+   },
+   {
+    "name": "Verandah",
+    "categories": [
+     {
+      "name": "Obstructed Verandah",
+      "id": "NS_VN_OVN",
+      "price": [
+       {
+        "tax": 160,
+        "price": 1654,
+        "launchPrice": 1899,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_VN_OVN",
+        "basePrice": 1494,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 1199,
+        "launchPrice": 1479,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_VN_OVN",
+        "basePrice": 1039,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": "VH"
+     },
+     {
+      "name": "Verandah",
+      "id": "NS_VN_VN",
+      "price": [
+       {
+        "tax": 160,
+        "price": 1704,
+        "launchPrice": 1999,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_VN_VN",
+        "basePrice": 1544,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 1249,
+        "launchPrice": 1579,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_VN_VN",
+        "basePrice": 1089,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": ""
+     },
+     {
+      "name": "Aft-View Verandah",
+      "id": "NS_VN_AVN",
+      "price": [
+       {
+        "tax": 160,
+        "price": 2194,
+        "launchPrice": 2449,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_VN_AVN",
+        "basePrice": 2034,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 1739,
+        "launchPrice": 2029,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_VN_AVN",
+        "basePrice": 1579,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": ""
+     },
+     {
+      "name": "Spa Verandah",
+      "id": "NS_VN_SVN",
+      "price": [
+       {
+        "tax": 160,
+        "price": 2264,
+        "launchPrice": 2509,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_VN_SVN",
+        "basePrice": 2104,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 1809,
+        "launchPrice": 2089,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_VN_SVN",
+        "basePrice": 1649,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": ""
+     }
+    ],
+    "id": "NS_VN",
+    "lowestPrice": {
+     "tax": 160,
+     "price": 1199,
+     "launchPrice": 1479,
+     "fare": "QA1",
+     "classification": "restricted",
+     "category": "NS_VN_OVN",
+     "basePrice": 1039,
+     "baseTax": 0,
+     "flight": null,
+     "taxAndFeesCombined": true,
+     "promoCodes": [
+      "QA_USD"
+     ],
+     "active": true,
+     "includedPromos": [
+      "KR1"
+     ],
+     "subCategory": "VH"
+    }
+   },
+   {
+    "name": "Vista Suite",
+    "categories": [
+     {
+      "name": "Vista Suite",
+      "id": "NS_VS_VS",
+      "price": [
+       {
+        "tax": 160,
+        "price": 2104,
+        "launchPrice": 2499,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_VS_VS",
+        "basePrice": 1944,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 1649,
+        "launchPrice": 2079,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_VS_VS",
+        "basePrice": 1489,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": "BC"
+     },
+     {
+      "name": "Aft-View Vista Suite",
+      "id": "NS_VS_AVS",
+      "price": [
+       {
+        "tax": 160,
+        "price": 2494,
+        "launchPrice": 2889,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_VS_AVS",
+        "basePrice": 2334,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 2039,
+        "launchPrice": 2469,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_VS_AVS",
+        "basePrice": 1879,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": ""
+     }
+    ],
+    "id": "NS_VS",
+    "lowestPrice": {
+     "tax": 160,
+     "price": 1649,
+     "launchPrice": 2079,
+     "fare": "QA1",
+     "classification": "restricted",
+     "category": "NS_VS_VS",
+     "basePrice": 1489,
+     "baseTax": 0,
+     "flight": null,
+     "taxAndFeesCombined": true,
+     "promoCodes": [
+      "QA_USD"
+     ],
+     "active": true,
+     "includedPromos": [
+      "KR1"
+     ],
+     "subCategory": "BC"
+    }
+   },
+   {
+    "name": "Signature Suite",
+    "categories": [
+     {
+      "name": "Signature Suite",
+      "id": "NS_SS_SS",
+      "price": [
+       {
+        "tax": 160,
+        "price": 3454,
+        "launchPrice": 3719,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_SS_SS",
+        "basePrice": 3294,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 2999,
+        "launchPrice": 3299,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_SS_SS",
+        "basePrice": 2839,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": "SY"
+     }
+    ],
+    "id": "NS_SS",
+    "lowestPrice": {
+     "tax": 160,
+     "price": 2999,
+     "launchPrice": 3299,
+     "fare": "QA1",
+     "classification": "restricted",
+     "category": "NS_SS_SS",
+     "basePrice": 2839,
+     "baseTax": 0,
+     "flight": null,
+     "taxAndFeesCombined": true,
+     "promoCodes": [
+      "QA_USD"
+     ],
+     "active": true,
+     "includedPromos": [
+      "KR1"
+     ],
+     "subCategory": "SY"
+    }
+   },
+   {
+    "name": "Neptune Suite",
+    "categories": [
+     {
+      "name": "Neptune Suite",
+      "id": "NS_NS_NS",
+      "price": [
+       {
+        "tax": 160,
+        "price": 4004,
+        "launchPrice": 4219,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_NS_NS",
+        "basePrice": 3844,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 3549,
+        "launchPrice": 3799,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_NS_NS",
+        "basePrice": 3389,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": "SC"
+     },
+     {
+      "name": "Neptune Spa Suite",
+      "id": "NS_NS_NSS",
+      "price": [
+       {
+        "tax": 160,
+        "price": 5174,
+        "launchPrice": 5389,
+        "fare": "N11",
+        "classification": "flexible",
+        "category": "NS_NS_NSS",
+        "basePrice": 5014,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "N1_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "NS1",
+         "Z34"
+        ]
+       },
+       {
+        "tax": 160,
+        "price": 4719,
+        "launchPrice": 4969,
+        "fare": "QA1",
+        "classification": "restricted",
+        "category": "NS_NS_NSS",
+        "basePrice": 4559,
+        "baseTax": 0,
+        "flight": null,
+        "taxAndFeesCombined": true,
+        "promoCodes": [
+         "QA_USD"
+        ],
+        "active": true,
+        "includedPromos": [
+         "KR1"
+        ]
+       }
+      ],
+      "subCategory": ""
+     },
+     {
+      "name": "Pinnacle Suite",
+      "id": "NS_NS_PS",
+      "price": [],
+      "subCategory": ""
+     }
+    ],
+    "id": "NS_NS",
+    "lowestPrice": {
+     "tax": 160,
+     "price": 3549,
+     "launchPrice": 3799,
+     "fare": "QA1",
+     "classification": "restricted",
+     "category": "NS_NS_NS",
+     "basePrice": 3389,
+     "baseTax": 0,
+     "flight": null,
+     "taxAndFeesCombined": true,
+     "promoCodes": [
+      "QA_USD"
+     ],
+     "active": true,
+     "includedPromos": [
+      "KR1"
+     ],
+     "subCategory": "SC"
+    }
+   }
+  ],
+  "webDestCode": "C",
+  "taxAndFeesCombined": true,
+  "cruiseCode": "J711",
+  "itineraryId": "C7W07A",
+  "arriveDate": "2027-01-17",
+  "departDate": "2027-01-10",
+  "tourDeparture": "2027-01-10",
+  "tourId": "",
+  "shipVersion": "1",
+  "shipCode": "NS",
+  "currencyCode": "USD",
+  "bestAvailable": {
+   "tax": 160,
+   "price": 799,
+   "launchPrice": 1064,
+   "fare": "QA1",
+   "classification": "restricted",
+   "category": "NS_IN_IN",
+   "basePrice": 639,
+   "baseTax": 0,
+   "flight": null,
+   "taxAndFeesCombined": true,
+   "promoCodes": [
+    "QA_USD"
+   ],
+   "active": true,
+   "includedPromos": [
+    "KR1"
+   ],
+   "id": "NS_IN",
+   "name": "Inside",
+   "useBestAvailable": true
+  },
+  "portCharges": null,
+  "serviceCharges": []
+ },
+ "errors": []
+}

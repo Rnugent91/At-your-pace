@@ -1,0 +1,214 @@
+{
+ "categories": [
+  {
+   "id": "S0",
+   "name": "Sky Suite",
+   "meta": "S",
+   "subMeta": "A"
+  },
+  {
+   "id": "S2",
+   "name": "Grand Suite",
+   "meta": "S",
+   "subMeta": "B"
+  },
+  {
+   "id": "S4",
+   "name": "Vista Suite",
+   "meta": "S",
+   "subMeta": "F"
+  },
+  {
+   "id": "S9",
+   "name": "Signature Suite",
+   "meta": "S",
+   "subMeta": "G"
+  },
+  {
+   "id": "C1",
+   "name": "Cabana Deck Mini-Suite",
+   "meta": "M",
+   "subMeta": "R"
+  },
+  {
+   "id": "C2",
+   "name": "Cabana Deck Mini-Suite",
+   "meta": "M",
+   "subMeta": "R"
+  },
+  {
+   "id": "CA",
+   "name": "Cabana Mini-Suite",
+   "meta": "M",
+   "subMeta": "N"
+  },
+  {
+   "id": "CB",
+   "name": "Cabana Mini-Suite",
+   "meta": "M",
+   "subMeta": "N"
+  },
+  {
+   "id": "M1",
+   "name": "Sanctuary Mini-Suite",
+   "meta": "M",
+   "subMeta": "H"
+  },
+  {
+   "id": "M2",
+   "name": "Sanctuary Mini-Suite",
+   "meta": "M",
+   "subMeta": "H"
+  },
+  {
+   "id": "MA",
+   "name": "Mini-Suite",
+   "meta": "M",
+   "subMeta": "M"
+  },
+  {
+   "id": "MD",
+   "name": "Mini-Suite",
+   "meta": "M",
+   "subMeta": "M"
+  },
+  {
+   "id": "ME",
+   "name": "Mini-Suite",
+   "meta": "M",
+   "subMeta": "M"
+  },
+  {
+   "id": "D0",
+   "name": "Sanctuary Balcony",
+   "meta": "B",
+   "subMeta": "0"
+  },
+  {
+   "id": "D1",
+   "name": "Premium Deluxe Balcony",
+   "meta": "B",
+   "subMeta": "U"
+  },
+  {
+   "id": "D2",
+   "name": "Premium Deluxe Balcony",
+   "meta": "B",
+   "subMeta": "U"
+  },
+  {
+   "id": "DA",
+   "name": "Deluxe Balcony",
+   "meta": "B",
+   "subMeta": "D"
+  },
+  {
+   "id": "DB",
+   "name": "Deluxe Balcony",
+   "meta": "B",
+   "subMeta": "D"
+  },
+  {
+   "id": "DC",
+   "name": "Deluxe Balcony",
+   "meta": "B",
+   "subMeta": "D"
+  },
+  {
+   "id": "DD",
+   "name": "Deluxe Balcony",
+   "meta": "B",
+   "subMeta": "D"
+  },
+  {
+   "id": "DE",
+   "name": "Deluxe Balcony",
+   "meta": "B",
+   "subMeta": "D"
+  },
+  {
+   "id": "DF",
+   "name": "Deluxe Balcony",
+   "meta": "B",
+   "subMeta": "D"
+  },
+  {
+   "id": "DG",
+   "name": "Cove Balcony",
+   "meta": "B",
+   "subMeta": "C"
+  },
+  {
+   "id": "DH",
+   "name": "Cove Balcony",
+   "meta": "B",
+   "subMeta": "C"
+  },
+  {
+   "id": "O2",
+   "name": "Premium Oceanview",
+   "meta": "O",
+   "subMeta": "D"
+  },
+  {
+   "id": "O3",
+   "name": "Premium Oceanview",
+   "meta": "O",
+   "subMeta": "D"
+  },
+  {
+   "id": "O5",
+   "name": "Premium Oceanview",
+   "meta": "O",
+   "subMeta": "D"
+  },
+  {
+   "id": "IA",
+   "name": "Interior",
+   "meta": "I",
+   "subMeta": "I"
+  },
+  {
+   "id": "IB",
+   "name": "Interior",
+   "meta": "I",
+   "subMeta": "I"
+  },
+  {
+   "id": "IC",
+   "name": "Interior",
+   "meta": "I",
+   "subMeta": "I"
+  },
+  {
+   "id": "ID",
+   "name": "Interior",
+   "meta": "I",
+   "subMeta": "I"
+  },
+  {
+   "id": "IE",
+   "name": "Interior",
+   "meta": "I",
+   "subMeta": "I"
+  },
+  {
+   "id": "IF",
+   "name": "Interior",
+   "meta": "I",
+   "subMeta": "I"
+  },
+  {
+   "id": "IS",
+   "name": "Interior Single",
+   "meta": "I",
+   "subMeta": "G"
+  },
+  {
+   "id": "Y",
+   "name": "Interior",
+   "meta": "I",
+   "subMeta": "I"
+  }
+ ]
+}

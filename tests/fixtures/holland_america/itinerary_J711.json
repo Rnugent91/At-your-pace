@@ -1,0 +1,106 @@
+{
+ "itineraryListItems": [
+  {
+   "dayTitle": "1",
+   "itineraryDate": [
+    "Jan 10, 2027"
+   ],
+   "title": "Fort Lauderdale, Florida, US",
+   "portID": "FLL",
+   "location": "Fort Lauderdale, Florida, US",
+   "portFlags": [],
+   "arrivalTime": "",
+   "departTime": "16:00"
+  },
+  {
+   "dayTitle": "2",
+   "itineraryDate": [
+    "Jan 11, 2027"
+   ],
+   "title": "RelaxAway Half Moon Cay, Bahamas",
+   "portID": "HMD",
+   "location": "RelaxAway Half Moon Cay, Bahamas",
+   "portFlags": [
+    "TR",
+    "NW"
+   ],
+   "arrivalTime": "09:00",
+   "departTime": "17:00"
+  },
+  {
+   "dayTitle": "3",
+   "itineraryDate": [
+    "Jan 12, 2027"
+   ],
+   "title": "Days At Sea",
+   "portID": "ATSEADAY",
+   "location": "Days At Sea",
+   "portFlags": [],
+   "arrivalTime": "12:00 AM",
+   "departTime": "11:59 PM"
+  },
+  {
+   "dayTitle": "4",
+   "itineraryDate": [
+    "Jan 13, 2027"
+   ],
+   "title": "Ocho Rios, Jamaica",
+   "portID": "OCJ",
+   "location": "Ocho Rios, Jamaica",
+   "portFlags": [],
+   "arrivalTime": "08:00",
+   "departTime": "16:00"
+  },
+  {
+   "dayTitle": "5",
+   "itineraryDate": [
+    "Jan 14, 2027"
+   ],
+   "title": "Georgetown, Cayman Islands",
+   "portID": "GCM",
+   "location": "Georgetown, Cayman Islands",
+   "portFlags": [
+    "TR",
+    "NW"
+   ],
+   "arrivalTime": "08:00",
+   "departTime": "15:00"
+  },
+  {
+   "dayTitle": "6",
+   "itineraryDate": [
+    "Jan 15, 2027"
+   ],
+   "title": "Cozumel, Mexico",
+   "portID": "CZM",
+   "location": "Cozumel, Mexico",
+   "portFlags": [],
+   "arrivalTime": "11:00",
+   "departTime": "21:00"
+  },
+  {
+   "dayTitle": "7",
+   "itineraryDate": [
+    "Jan 16, 2027"
+   ],
+   "title": "Days At Sea",
+   "portID": "ATSEADAY",
+   "location": "Days At Sea",
+   "portFlags": [],
+   "arrivalTime": "12:00 AM",
+   "departTime": "11:59 PM"
+  },
+  {
+   "dayTitle": "8",
+   "itineraryDate": [
+    "Jan 17, 2027"
+   ],
+   "title": "Fort Lauderdale, Florida, US",
+   "portID": "FLL",
+   "location": "Fort Lauderdale, Florida, US",
+   "portFlags": [],
+   "arrivalTime": "07:00",
+   "departTime": ""
+  }
+ ]
+}

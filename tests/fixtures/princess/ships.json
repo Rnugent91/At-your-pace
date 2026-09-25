@@ -1,0 +1,256 @@
+{
+ "ships": [
+  {
+   "id": "ST",
+   "name": "Star Princess",
+   "versionDates": [
+    {
+     "endDate": "20290410",
+     "version": "1",
+     "startDate": "20260927"
+    }
+   ]
+  },
+  {
+   "id": "SU",
+   "name": "Sun Princess",
+   "versionDates": [
+    {
+     "endDate": "20281110",
+     "version": "3",
+     "startDate": "20260926"
+    }
+   ]
+  },
+  {
+   "id": "RU",
+   "name": "Ruby Princess",
+   "versionDates": [
+    {
+     "endDate": "20261226",
+     "version": "8",
+     "startDate": "20261003"
+    },
+    {
+     "endDate": "20290415",
+     "version": "9",
+     "startDate": "20270111"
+    }
+   ]
+  },
+  {
+   "id": "DI",
+   "name": "Diamond Princess",
+   "versionDates": [
+    {
+     "endDate": "20261219",
+     "version": "8",
+     "startDate": "20261001"
+    },
+    {
+     "endDate": "20281111",
+     "version": "9",
+     "startDate": "20270102"
+    }
+   ]
+  },
+  {
+   "id": "KP",
+   "name": "Crown Princess",
+   "versionDates": [
+    {
+     "endDate": "20261109",
+     "version": "8",
+     "startDate": "20261003"
+    },
+    {
+     "endDate": "20290419",
+     "version": "9",
+     "startDate": "20261203"
+    }
+   ]
+  },
+  {
+   "id": "IP",
+   "name": "Island Princess",
+   "versionDates": [
+    {
+     "endDate": "20280927",
+     "version": "0",
+     "startDate": "20261006"
+    }
+   ]
+  },
+  {
+   "id": "GP",
+   "name": "Regal Princess",
+   "versionDates": [
+    {
+     "endDate": "20261024",
+     "version": "9",
+     "startDate": "20260926"
+    },
+    {
+     "endDate": "20280817",
+     "version": "0",
+     "startDate": "20261031"
+    }
+   ]
+  },
+  {
+   "id": "EP",
+   "name": "Emerald Princess",
+   "versionDates": [
+    {
+     "endDate": "20261230",
+     "version": "8",
+     "startDate": "20260930"
+    },
+    {
+     "endDate": "20280917",
+     "version": "9",
+     "startDate": "20270109"
+    }
+   ]
+  },
+  {
+   "id": "CO",
+   "name": "Coral Princess",
+   "versionDates": [
+    {
+     "endDate": "20290213",
+     "version": "7",
+     "startDate": "20260929"
+    }
+   ]
+  },
+  {
+   "id": "SA",
+   "name": "Sapphire Princess",
+   "versionDates": [
+    {
+     "endDate": "20261023",
+     "version": "9",
+     "startDate": "20261003"
+    },
+    {
+     "endDate": "20280826",
+     "version": "0",
+     "startDate": "20261106"
+    }
+   ]
+  },
+  {
+   "id": "AP",
+   "name": "Grand Princess",
+   "versionDates": [
+    {
+     "endDate": "20261005",
+     "version": "4",
+     "startDate": "20261005"
+    },
+    {
+     "endDate": "20280923",
+     "version": "5",
+     "startDate": "20261103"
+    }
+   ]
+  },
+  {
+   "id": "EX",
+   "name": "Enchanted Princess",
+   "versionDates": [
+    {
+     "endDate": "20261203",
+     "version": "2",
+     "startDate": "20261006"
+    },
+    {
+     "endDate": "20281118",
+     "version": "3",
+     "startDate": "20261217"
+    }
+   ]
+  },
+  {
+   "id": "YP",
+   "name": "Sky Princess",
+   "versionDates": [
+    {
+     "endDate": "20261207",
+     "version": "3",
+     "startDate": "20260926"
+    },
+    {
+     "endDate": "20281028",
+     "version": "4",
+     "startDate": "20261213"
+    }
+   ]
+  },
+  {
+   "id": "XP",
+   "name": "Discovery Princess",
+   "versionDates": [
+    {
+     "endDate": "20261031",
+     "version": "2",
+     "startDate": "20260926"
+    },
+    {
+     "endDate": "20290407",
+     "version": "3",
+     "startDate": "20261107"
+    }
+   ]
+  },
+  {
+   "id": "MJ",
+   "name": "Majestic Princess",
+   "versionDates": [
+    {
+     "endDate": "20261024",
+     "version": "5",
+     "startDate": "20261003"
+    },
+    {
+     "endDate": "20290124",
+     "version": "6",
+     "startDate": "20261031"
+    }
+   ]
+  },
+  {
+   "id": "RP",
+   "name": "Royal Princess",
+   "versionDates": [
+    {
+     "endDate": "20261203",
+     "version": "6",
+     "startDate": "20261004"
+    },
+    {
+     "endDate": "20280909",
+     "version": "7",
+     "startDate": "20261205"
+    }
+   ]
+  },
+  {
+   "id": "CB",
+   "name": "Caribbean Princess",
+   "versionDates": [
+    {
+     "endDate": "20261229",
+     "version": "4",
+     "startDate": "20260927"
+    },
+    {
+     "endDate": "20281104",
+     "version": "5",
+     "startDate": "20270110"
+    }
+   ]
+  }
+ ]
+}

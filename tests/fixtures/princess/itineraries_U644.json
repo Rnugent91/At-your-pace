@@ -1,0 +1,149 @@
+{
+ "cruises": [
+  {
+   "id": "U644",
+   "itineraries": [
+    {
+     "id": "FLL1",
+     "type": "P",
+     "dayIn": 0,
+     "arrivalDt": "20261115",
+     "departDt": "20261115",
+     "arrivalTime": "",
+     "departTime": "04:00 PM",
+     "resFlag1": "",
+     "resFlag2": "",
+     "resFlag3": "",
+     "pierCode": "P",
+     "boardingTime": "12:00 PM"
+    },
+    {
+     "type": "P",
+     "dayIn": 1,
+     "arrivalDt": "20261116",
+     "departDt": "20261116",
+     "arrivalTime": "",
+     "departTime": "",
+     "resFlag1": "",
+     "resFlag2": "",
+     "resFlag3": "",
+     "pierCode": "",
+     "boardingTime": ""
+    },
+    {
+     "id": "CZM1",
+     "type": "P",
+     "dayIn": 2,
+     "arrivalDt": "20261117",
+     "departDt": "20261117",
+     "arrivalTime": "08:00 AM",
+     "departTime": "06:00 PM",
+     "resFlag1": "",
+     "resFlag2": "",
+     "resFlag3": "",
+     "pierCode": "",
+     "boardingTime": "05:30 PM"
+    },
+    {
+     "id": "MH11",
+     "type": "P",
+     "dayIn": 3,
+     "arrivalDt": "20261118",
+     "departDt": "20261118",
+     "arrivalTime": "08:00 AM",
+     "departTime": "05:30 PM",
+     "resFlag1": "",
+     "resFlag2": "",
+     "resFlag3": "",
+     "pierCode": "",
+     "boardingTime": "05:00 PM"
+    },
+    {
+     "id": "RTB1",
+     "type": "P",
+     "dayIn": 4,
+     "arrivalDt": "20261119",
+     "departDt": "20261119",
+     "arrivalTime": "08:00 AM",
+     "departTime": "04:30 PM",
+     "resFlag1": "",
+     "resFlag2": "",
+     "resFlag3": "",
+     "pierCode": "",
+     "boardingTime": "04:00 PM"
+    },
+    {
+     "type": "P",
+     "dayIn": 5,
+     "arrivalDt": "20261120",
+     "departDt": "20261120",
+     "arrivalTime": "",
+     "departTime": "",
+     "resFlag1": "",
+     "resFlag2": "",
+     "resFlag3": "",
+     "pierCode": "",
+     "boardingTime": ""
+    },
+    {
+     "type": "P",
+     "dayIn": 6,
+     "arrivalDt": "20261121",
+     "departDt": "20261121",
+     "arrivalTime": "",
+     "departTime": "",
+     "resFlag1": "",
+     "resFlag2": "",
+     "resFlag3": "",
+     "pierCode": "",
+     "boardingTime": ""
+    },
+    {
+     "id": "FLL2",
+     "type": "P",
+     "dayIn": 7,
+     "arrivalDt": "20261122",
+     "departDt": "20261122",
+     "arrivalTime": "06:00 AM",
+     "departTime": "",
+     "resFlag1": "",
+     "resFlag2": "",
+     "resFlag3": "",
+     "pierCode": "P",
+     "boardingTime": "00:00"
+    }
+   ]
+  }
+ ],
+ "ports": [
+  {
+   "id": "FLL",
+   "name": "Ft. Lauderdale, Florida",
+   "countryId": "US",
+   "isEmbark": true,
+   "isDisembark": true
+  },
+  {
+   "id": "CZM",
+   "name": "Cozumel, Mexico",
+   "countryId": "MX"
+  },
+  {
+   "id": "MH1",
+   "name": "Costa Maya (Mahahual), Mexico",
+   "countryId": "MX"
+  },
+  {
+   "id": "RTB",
+   "name": "Roatan (Isla Tropicale), Honduras",
+   "countryId": "HN"
+  },
+  {
+   "id": "FLL",
+   "name": "Ft. Lauderdale, Florida",
+   "countryId": "US",
+   "isEmbark": true,
+   "isDisembark": true
+  }
+ ]
+}

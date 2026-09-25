@@ -1,0 +1,190 @@
+{
+ "metas": [
+  {
+   "id": "S",
+   "name": "Suite",
+   "subMetas": [
+    {
+     "id": "SX",
+     "name": "Family Suite"
+    },
+    {
+     "id": "SB",
+     "name": "Grand Suite"
+    },
+    {
+     "id": "S1",
+     "name": "Grand Suite"
+    },
+    {
+     "id": "S2",
+     "name": "Owner's Suite"
+    },
+    {
+     "id": "S3",
+     "name": "Penthouse Suite"
+    },
+    {
+     "id": "S4",
+     "name": "Penthouse Suite"
+    },
+    {
+     "id": "S5",
+     "name": "Premium Suite"
+    },
+    {
+     "id": "SS",
+     "name": "Sanctuary Mini-Suite No Balc"
+    },
+    {
+     "id": "S9",
+     "name": "Signature Suite"
+    },
+    {
+     "id": "SG",
+     "name": "Signature Suite"
+    },
+    {
+     "id": "S0",
+     "name": "Sky Suite"
+    },
+    {
+     "id": "SA",
+     "name": "Sky Suite"
+    },
+    {
+     "id": "S6",
+     "name": "Vista Suite"
+    },
+    {
+     "id": "SF",
+     "name": "Vista Suite"
+    },
+    {
+     "id": "SW",
+     "name": "Window Suite"
+    }
+   ]
+  },
+  {
+   "id": "M",
+   "name": "Mini-suite",
+   "subMetas": [
+    {
+     "id": "MR",
+     "name": "Cabana Deck Mini-Suite"
+    },
+    {
+     "id": "MN",
+     "name": "Cabana Mini-Suite"
+    },
+    {
+     "id": "MM",
+     "name": "Mini-Suite"
+    },
+    {
+     "id": "ME",
+     "name": "Mini-Suite No Balcony"
+    },
+    {
+     "id": "MP",
+     "name": "Premium Mini-Suite"
+    },
+    {
+     "id": "MV",
+     "name": "Reserve Collection Mini-Suite"
+    },
+    {
+     "id": "MU",
+     "name": "Reserve Mini-Suite No Balcony"
+    },
+    {
+     "id": "MH",
+     "name": "Sanctuary Mini-Suite"
+    }
+   ]
+  },
+  {
+   "id": "B",
+   "name": "Balcony",
+   "subMetas": [
+    {
+     "id": "BB",
+     "name": "Balcony"
+    },
+    {
+     "id": "BF",
+     "name": "Balcony Obstructed"
+    },
+    {
+     "id": "BV",
+     "name": "Balcony Partially Obstructed"
+    },
+    {
+     "id": "BC",
+     "name": "Cove Balcony"
+    },
+    {
+     "id": "BD",
+     "name": "Deluxe Balcony"
+    },
+    {
+     "id": "BP",
+     "name": "Deluxe Balcony Partl Obstructd"
+    },
+    {
+     "id": "BR",
+     "name": "Premium Balcony"
+    },
+    {
+     "id": "BU",
+     "name": "Premium Deluxe Balcony"
+    },
+    {
+     "id": "B0",
+     "name": "Sanctuary Balcony"
+    }
+   ]
+  },
+  {
+   "id": "O",
+   "name": "Oceanview",
+   "subMetas": [
+    {
+     "id": "OO",
+     "name": "Oceanview"
+    },
+    {
+     "id": "OF",
+     "name": "Oceanview Obstructed"
+    },
+    {
+     "id": "OT",
+     "name": "Oceanview Part Obstructed"
+    },
+    {
+     "id": "OD",
+     "name": "Premium Oceanview"
+    },
+    {
+     "id": "OS",
+     "name": "Sanctuary Oceanview"
+    }
+   ]
+  },
+  {
+   "id": "I",
+   "name": "Interior",
+   "subMetas": [
+    {
+     "id": "IG",
+     "name": "Interior Single"
+    },
+    {
+     "id": "II",
+     "name": "Interior"
+    }
+   ]
+  }
+ ]
+}
