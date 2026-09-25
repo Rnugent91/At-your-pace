@@ -235,6 +235,9 @@ class VikingProvider:
         self._use_browser = False
 
     cruise_line = "Viking"
+    # Every Viking fare includes Wi-Fi and all dining (specialty restaurants too), so web
+    # research shouldn't go looking for paid packages of those kinds.
+    included_addon_kinds = ("internet", "dining")
 
     def handles(self, cruise_line: str) -> bool:
         return "viking" in cruise_line.lower()
@@ -284,9 +287,10 @@ class VikingProvider:
             log.warning("Viking stateroom fetch failed: %s", exc)
             warnings.append(f"Stateroom prices could not be loaded from Viking: {exc}")
 
+        itin_html, itin_url = "", ""
         if page_url:
             try:
-                research.itinerary, itin_url = self.fetch_itinerary(
+                research.itinerary, itin_url, itin_html = self.fetch_itinerary(
                     site, page_url, entry.get("cruiseDirection") or "", req.sail_date
                 )
                 if research.itinerary and itin_url not in research.sources:
@@ -295,7 +299,11 @@ class VikingProvider:
                 log.warning("Viking itinerary fetch failed: %s", exc)
                 warnings.append(f"Day-by-day itinerary could not be loaded from Viking: {exc}")
 
-        research.addons = self.build_addons(site, entry, warnings)
+        try:
+            research.addons = self.build_addons(site, entry, warnings, itin_html, itin_url, research.itinerary)
+        except Exception as exc:  # add-ons must never fail the research
+            log.exception("Viking add-ons failed")
+            warnings.append(f"Viking add-ons could not be loaded: {exc}")
         if req.children:
             warnings.append("Viking sails adults-only (18+); children can't be booked on this sailing.")
         return research
@@ -566,8 +574,10 @@ class VikingProvider:
 
     # ── Itinerary ────────────────────────────────────────────────────────
 
-    def fetch_itinerary(self, site: Site, page_url: str, direction: str, sail_date: str) -> tuple[list[ItineraryDay], str]:
-        """Day-by-day from the cruise page for this sailing's direction and year."""
+    def fetch_itinerary(
+        self, site: Site, page_url: str, direction: str, sail_date: str
+    ) -> tuple[list[ItineraryDay], str, str]:
+        """Day-by-day from the cruise page for this sailing's direction and year → (days, url, html)."""
         year = sail_date[:4]
         html = self.get_html(page_url)
         url = page_url
@@ -582,7 +592,7 @@ class VikingProvider:
         days = self.parse_days(html, sail_date)
         if not days:
             raise ProviderError("no day-by-day itinerary on the cruise page")
-        return days, url
+        return days, url, html
 
     @staticmethod
     def variant_url(html: str, direction: str, year: str) -> Optional[str]:
@@ -644,11 +654,52 @@ class VikingProvider:
         return out
 
     # ── Add-ons ──────────────────────────────────────────────────────────
+    #
+    # What Viking sells beyond the fare, from Viking's own public pages:
+    #   * Silver Spirits Beverage Package — /my-trip/silver-spirits-beverage-package page
+    #   * crew gratuities and the Viking Air Plus fee — the site's FAQ
+    #   * Viking Air — the sailing's own lowest air add-on (DnPCruiseFullInfo)
+    #   * pre/post cruise extensions — "from" prices in the cruise page's JSON-LD
+    #   * shore excursions per port — each itinerary day page ("?itineraryday=N").
+    #     Viking marks the included one(s) but only shows optional excursion prices in
+    #     My Viking Journey after booking, so optional ones are listed without a price.
+    # Wi-Fi and specialty dining are included in every fare (see `included_addon_kinds`).
 
-    def build_addons(self, site: Site, entry: dict, warnings: list[str]) -> list[AddOn]:
-        addons: list[AddOn] = []
-        price = self.silver_spirits_price(site)
+    FARE_INCLUDES = (
+        "Fare already includes one shore excursion in every port, Wi-Fi, all onboard dining "
+        "(specialty restaurants too), beer, wine & soft drinks with lunch and dinner, "
+        "specialty coffees & teas, and port taxes & fees."
+    )
+
+    def build_addons(
+        self,
+        site: Site,
+        entry: dict,
+        warnings: list[str],
+        itinerary_html: str = "",
+        itinerary_url: str = "",
+        days: Optional[list[ItineraryDay]] = None,
+    ) -> list[AddOn]:
         ss_url = f"{site.base}/my-trip/silver-spirits-beverage-package/index.html"
+        faq_url = f"{site.base}/frequently-asked-questions.html"
+        day_urls = self.day_page_urls(site, itinerary_html, itinerary_url) if itinerary_html else {}
+
+        def fetch(url):
+            try:
+                return self.get_html(url)
+            except Exception as exc:  # one missing page must not sink the rest
+                log.warning("Viking add-on page failed %s: %s", url, exc)
+                return None
+
+        urls = [ss_url, faq_url, *day_urls.values()]
+        with ThreadPoolExecutor(max_workers=SCAN_WORKERS) as pool:
+            pages = dict(zip(urls, pool.map(fetch, urls)))
+
+        addons: list[AddOn] = []
+        faq = self.parse_faq(pages.get(faq_url) or "")
+
+        # Beverage
+        price = self.parse_silver_spirits(pages.get(ss_url) or "") or faq.get("silver_spirits")
         if price is not None:
             addons.append(
                 AddOn(
@@ -656,15 +707,36 @@ class VikingProvider:
                     name="Silver Spirits Beverage Package",
                     price=price,
                     price_unit="per_person_per_day",
-                    unit_label="per guest, per day",
+                    unit_label="per guest, per night (both guests in a stateroom, whole voyage)",
                     port=None,
-                    description="Wines, spirits & cocktails all day. Beer, wine & soft drinks with lunch "
-                    "and dinner, Wi-Fi and one shore excursion per port are already included in the fare.",
+                    description=(
+                        "Premium wines, spirits, cocktails and specialty coffees all day in every venue. "
+                        "No separate service charge. " + self.FARE_INCLUDES
+                    ),
                     source=ss_url,
                 )
             )
         else:
             warnings.append("Couldn't read the Silver Spirits Beverage Package price from Viking.")
+
+        # Gratuities and other fees
+        if faq.get("gratuity") is not None:
+            addons.append(
+                AddOn(
+                    kind="other",
+                    name="Crew gratuities",
+                    price=faq["gratuity"],
+                    price_unit="per_person_per_day",
+                    unit_label="per person, per night",
+                    port=None,
+                    description=(
+                        "Viking's recommended rate; pre-pay in My Viking Journey or it is added to the "
+                        "onboard account automatically (adjustable at Guest Services)."
+                        + (" River rates vary by destination; this is the Europe rate." if site.key == "river" else "")
+                    ),
+                    source=faq_url,
+                )
+            )
         air = entry.get("lowestAirPrice")
         if isinstance(air, (int, float)) and air > 0:
             addons.append(
@@ -676,17 +748,54 @@ class VikingProvider:
                     unit_label="per person, from select US gateways",
                     port=None,
                     description=(
-                        f"Lowest Viking Air add-on for this sailing (advertised {entry['advertisedAirFare']})."
-                        if entry.get("advertisedAirFare")
-                        else "Lowest Viking Air add-on for this sailing."
+                        "Lowest Viking Air add-on for this sailing, including airport transfers and air taxes"
+                        + (f" (advertised {entry['advertisedAirFare']})." if entry.get("advertisedAirFare") else ".")
                     ),
                     source="Viking Dates & Pricing",
                 )
             )
-        warnings.append(
-            "Optional shore excursion prices aren't published by Viking before booking; "
-            "one excursion per port is included in the fare."
-        )
+        if faq.get("air_plus") is not None:
+            addons.append(
+                AddOn(
+                    kind="other",
+                    name="Viking Air Plus (custom flights service fee)",
+                    price=faq["air_plus"],
+                    price_unit="per_person",
+                    unit_label="per guest, non-refundable",
+                    port=None,
+                    description="Fee to have a Viking Air Expert customize flights (plus any fare difference).",
+                    source=faq_url,
+                )
+            )
+
+        # Pre/post extensions
+        extensions = self.parse_extensions(itinerary_html, itinerary_url) if itinerary_html else []
+        addons += extensions
+        if extensions:
+            warnings.append(
+                "Viking pre/post extension prices are published 'from' prices per person, not quoted for this date."
+            )
+
+        # Shore excursions
+        excursions: list[AddOn] = []
+        seen = set()
+        ports_by_day = {d.day: d.port for d in days or []}
+        for n, url in day_urls.items():
+            for x in self.parse_excursions(pages.get(url) or "", ports_by_day.get(n), url):
+                if (x.port, x.name) not in seen:
+                    seen.add((x.port, x.name))
+                    excursions.append(x)
+        addons += excursions
+        optional = sum(1 for x in excursions if x.price is None)
+        if optional:
+            warnings.append(
+                f"Viking doesn't publish optional shore excursion prices before booking; {optional} optional "
+                "excursions are listed without a price (see My Viking Journey once booked)."
+            )
+        elif not excursions:
+            warnings.append(
+                "Couldn't read Viking's shore excursions for this sailing; one excursion per port is included in the fare."
+            )
         return addons
 
     def silver_spirits_price(self, site: Site) -> Optional[float]:
@@ -694,11 +803,131 @@ class VikingProvider:
             html = self.get_html(f"{site.base}/my-trip/silver-spirits-beverage-package/index.html")
         except ProviderError:
             return None
-        text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
+        return self.parse_silver_spirits(html)
+
+    @staticmethod
+    def parse_silver_spirits(html: str) -> Optional[float]:
+        text = BeautifulSoup(html or "", "html.parser").get_text(" ", strip=True)
         m = re.search(r"Silver Spirits Beverage Package\s*\(\s*\$(\d+(?:\.\d+)?)\s*USD\s*/\s*Day", text, re.I) or re.search(
-            r"\$(\d+(?:\.\d+)?)\s*USD\s*(?:per|/)\s*day", text, re.I
+            r"\$(\d+(?:\.\d+)?)\s*USD\s*(?:per|/)\s*(?:day|night)", text, re.I
         )
         return float(m.group(1)) if m else None
+
+    @staticmethod
+    def parse_faq(html: str) -> dict[str, float]:
+        """Fees from the FAQ's embedded answers: gratuity rate, Silver Spirits, Air Plus fee."""
+        out: dict[str, float] = {}
+        text = re.sub(r"<[^>]+>|\\u003c[^\\]*?\\u003e", " ", html or "")
+        text = re.sub(r"\s+", " ", text.replace("&nbsp;", " ").replace("\\u0026nbsp;", " "))
+        patterns = {
+            "gratuity": r"(?:recommended gratuity rate of|recommended rate is) \$(\d+(?:\.\d+)?) USD per person, per night",
+            "silver_spirits": r"Silver Spirits Beverage Package\. For only \$(\d+(?:\.\d+)?) USD per night",
+            "air_plus": r"Air Plus service fee of \$(\d+(?:\.\d+)?) USD per guest",
+        }
+        for key, pat in patterns.items():
+            m = re.search(pat, text)
+            if m:
+                out[key] = float(m.group(1))
+        return out
+
+    @staticmethod
+    def parse_extensions(html: str, source: str) -> list[AddOn]:
+        """Pre/post cruise extensions from the cruise page's schema.org TouristTrip products."""
+        out = []
+        for block in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html or "", re.S):
+            try:
+                data = json.loads(block)
+            except ValueError:
+                continue
+            name = (data.get("name") or "") if isinstance(data, dict) else ""
+            if not re.match(r"(Pre|Post):", name):
+                continue
+            offer = data.get("offers") or {}
+            price = parse_price(str(offer.get("lowPrice") or "")) if isinstance(offer, dict) else None
+            nights = re.fullmatch(r"P(\d+)D", data.get("duration") or "")
+            desc = BeautifulSoup(data.get("description") or "", "html.parser").get_text(" ", strip=True)
+            lead = f"{'Pre' if name.startswith('Pre') else 'Post'}-cruise extension"
+            if nights:
+                lead += f", {nights.group(1)} nights"
+            out.append(
+                AddOn(
+                    kind="other",
+                    name=f"{name.split(':', 1)[0]}-cruise extension: {name.split(':', 1)[1].strip()}",
+                    price=price,
+                    price_unit="per_person",
+                    unit_label="per person, double occupancy (from)",
+                    port=None,
+                    description=f"{lead}; published 'from' price. {desc}".strip()[:500],
+                    source=source,
+                )
+            )
+        return out
+
+    @staticmethod
+    def day_page_urls(site: Site, html: str, page_url: str) -> dict[int, str]:
+        """Itinerary day number → its day page, keeping the page's direction/year query."""
+        query = urlparse(page_url).query if page_url else ""
+        query = "&".join(q for q in query.split("&") if q and not q.startswith("itineraryday="))
+        out: dict[int, str] = {}
+        soup = BeautifulSoup(html, "html.parser")
+        for a in soup.select(".day-row a[href*='itineraryday=']"):
+            m = re.search(r"itineraryday=(\d+)", a["href"])
+            if not m or int(m.group(1)) in out:
+                continue
+            path = a["href"].split("?")[0]
+            q = f"{query}&itineraryday={m.group(1)}" if query else f"itineraryday={m.group(1)}"
+            out[int(m.group(1))] = urljoin(site.origin, f"{path}?{q}")
+        return out
+
+    @staticmethod
+    def parse_excursions(html: str, day_port: Optional[str], source: str) -> list[AddOn]:
+        """Shore excursion tiles on an itinerary day page (Included badge = in the fare)."""
+        soup = BeautifulSoup(html or "", "html.parser")
+        tiles = soup.select("a.dynamicModal[data-template-name='ExcursionDetail']")
+        # Multi-stop days ("Speyer / Rüdesheim"): Viking's item ids start with a per-port
+        # code (despe…, derue…), in the same order as the stops.
+        stops = [
+            p.strip()
+            for p in (day_port or "").split(" / ")
+            if p.strip() and not re.match(r"(scenic sailing|sail |cruising|at sea|explore )", p.strip(), re.I)
+        ]
+        prefixes: list[str] = []
+        for t in tiles:
+            pre = (t.get("data-item-id") or "")[:5]
+            if pre and pre not in prefixes:
+                prefixes.append(pre)
+        out = []
+        for t in tiles:
+            title = t.select_one("h3")
+            name = title.get_text(" ", strip=True) if title else (t.get("data-template-id") or "")
+            if not name:
+                continue
+            badge = t.select_one(".badge-top-left")
+            included = bool(badge and "included" in badge.get_text(" ", strip=True).lower())
+            sub = t.select_one(".subtitle")
+            pre = (t.get("data-item-id") or "")[:5]
+            if len(stops) > 1 and len(prefixes) == len(stops) and pre in prefixes:
+                port = stops[prefixes.index(pre)]
+            else:
+                port = day_port
+            note = (
+                "Included in the fare."
+                if included
+                else "Optional excursion; Viking shows its price in My Viking Journey after booking."
+            )
+            out.append(
+                AddOn(
+                    kind="excursion",
+                    name=name,
+                    price=0.0 if included else None,
+                    price_unit="per_person",
+                    unit_label="per person",
+                    port=port,
+                    description=f"{sub.get_text(' ', strip=True) + ' ' if sub else ''}{note}",
+                    source=source,
+                )
+            )
+        return out
 
     # ── Bulk catalog ─────────────────────────────────────────────────────
 

@@ -58,6 +58,10 @@ class VikingSite:
             return fx("ocean_search.html")
         if url == f"{OCEAN}/ships/viking-sea.html":
             return f'<a href="{ITIN}">Iconic Western Mediterranean</a>'
+        if "itineraryday=5" in url and "startLocation=rome" in url:
+            return fx("ocean_day_marseille.html")
+        if url.endswith("/frequently-asked-questions.html"):
+            return fx("faq.html")
         if url.startswith("https://www.vikingcruises.com" + ITIN):
             if "startLocation=rome" in url and "year=2026" in url:
                 return fx("ocean_itinerary_rom_bcn_2026.html")
@@ -175,8 +179,25 @@ def test_full_research_by_ship_and_date():
 
     drinks = next(a for a in r.addons if a.kind == "beverage")
     assert drinks.price == 27.0 and drinks.price_unit == "per_person_per_day"
-    air = next(a for a in r.addons if a.kind == "other")
+    assert "Wi-Fi" in drinks.description  # says what the fare already includes
+    other = {a.name: a for a in r.addons if a.kind == "other"}
+    air = other["Viking Air (round-trip flights + transfers)"]
     assert air.price == 1499 and air.price_unit == "per_person"
+    assert other["Crew gratuities"].price == 20.0 and other["Crew gratuities"].price_unit == "per_person_per_day"
+    assert other["Viking Air Plus (custom flights service fee)"].price == 150.0
+    ext = other["Pre-cruise extension: Rome"]
+    assert ext.price == 1199.0 and ext.price_unit == "per_person" and "2 nights" in ext.description
+    assert "Pre-cruise extension: Ultimate Italy—Tuscany" in other
+    # Shore excursions for this sailing's day 5 (Marseille, reached via the Rome→Barcelona page).
+    shorex = {a.name: a for a in r.addons if a.kind == "excursion"}
+    assert set(shorex) == {"Scenic Marseille", "Panier District on Foot",
+                           "Historic Religious Sites of Marseille", "Discover Aix-en-Provence"}
+    assert shorex["Scenic Marseille"].price == 0.0 and "Included" in shorex["Scenic Marseille"].description
+    assert shorex["Discover Aix-en-Provence"].price is None
+    assert all(a.port == "Marseille, France" for a in shorex.values())
+    assert any("optional shore excursion" in w for w in r.warnings)
+    assert any("'from' prices" in w for w in r.warnings)
+    assert VikingProvider.included_addon_kinds == ("internet", "dining")
     assert r.sources[0].endswith("iconic-western-mediterranean/pricing.html")
 
 
@@ -302,3 +323,34 @@ def test_catalog_retries_after_429():
     p._sleep = slept.append
     rows = list(p.iter_catalog(today=date(2026, 10, 1)))
     assert len(rows) == 2 and slept and all(s <= 30 for s in slept)
+
+
+def test_excursions_split_across_multi_stop_day():
+    xs = VikingProvider.parse_excursions(
+        fx("river_day_multi_stop.html"), "Koblenz, Germany / Scenic Sailing: Middle Rhine / Rüdesheim, Germany", "src"
+    )
+    ports = {x.name: x.port for x in xs}
+    assert ports["Historic Koblenz"] == "Koblenz, Germany"
+    assert ports["Dine in Rüdesheim am Rhein"] == "Rüdesheim, Germany"
+    assert [x.price for x in xs if x.name == "Historic Koblenz"] == [0.0]
+
+
+def test_faq_fees_and_day_urls():
+    assert VikingProvider.parse_faq(fx("faq.html")) == {"gratuity": 20.0, "silver_spirits": 27.0, "air_plus": 150.0}
+    urls = VikingProvider.day_page_urls(
+        SITES["ocean"], fx("ocean_itinerary_rom_bcn_2026.html"),
+        f"https://www.vikingcruises.com{ITIN}?startLocation=rome&endLocation=barcelona&year=2026",
+    )
+    assert urls == {5: f"https://www.vikingcruises.com{ITIN}?startLocation=rome&endLocation=barcelona&year=2026&itineraryday=5"}
+
+
+def test_addon_failures_never_fail_research():
+    site = VikingSite()
+
+    def broken_addons(*a, **k):
+        raise RuntimeError("boom")
+
+    p = provider(site)
+    p.build_addons = broken_addons
+    r = p.research(ResearchRequest("Viking", "Viking Sea", "2026-10-16"))
+    assert r.staterooms and r.addons == [] and any("add-ons could not be loaded" in w for w in r.warnings)
