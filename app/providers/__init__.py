@@ -28,6 +28,14 @@ CRUISE_LINES = [
 ]
 
 
+CORE_ADDON_KINDS = {
+    "beverage": "drink packages",
+    "internet": "Wi-Fi plans",
+    "dining": "specialty dining",
+    "excursion": "shore excursions for this sailing's ports",
+}
+
+
 def run_research(
     req: ResearchRequest, direct: list[Provider], claude: ClaudeResearchProvider
 ) -> tuple[SailingResearch, str]:
@@ -53,8 +61,13 @@ def run_research(
         gaps.append("stateroom categories and per-person fares")
     if not result.itinerary:
         gaps.append("the day-by-day itinerary")
-    if not result.addons:
-        gaps.append("add-on packages (drinks, Wi-Fi, dining, excursions)")
+    # Core add-on kinds a quote should offer. A provider may declare kinds its fare
+    # already includes (e.g. Virgin's Wi-Fi and basic drinks) via `included_addon_kinds`.
+    have = {a.kind for a in result.addons}
+    skip = set(getattr(primary, "included_addon_kinds", ()))
+    missing = [k for k in CORE_ADDON_KINDS if k not in have and k not in skip]
+    if missing:
+        gaps.append("add-ons: " + ", ".join(CORE_ADDON_KINDS[k] for k in missing))
     if not gaps or not claude.configured:
         return result, primary.name
 
@@ -69,9 +82,11 @@ def run_research(
         result.warnings.append("Stateroom prices came from web research, not the cruise line's live system — verify them.")
     if not result.itinerary and fill.itinerary:
         result.itinerary = fill.itinerary
-    if not result.addons and fill.addons:
-        result.addons = fill.addons
-        result.warnings.append("Add-on prices came from web research — verify them.")
+    extra = [a for a in fill.addons if a.kind in missing]
+    if extra:
+        result.addons += extra
+        found = sorted({CORE_ADDON_KINDS[a.kind] for a in extra})
+        result.warnings.append(f"Prices for {', '.join(found)} came from web research — verify them.")
     result.sources += [s for s in fill.sources if s not in result.sources]
     result.warnings += fill.warnings
     return result, f"{primary.name} + {claude.name}"

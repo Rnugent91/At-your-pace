@@ -154,3 +154,32 @@ def test_price_changes_track_quoted_items_only():
     q.research.addons[0].price += 5
     changes = price_changes(q)
     assert [(c.label, c.dropped) for c in changes] == [("Interior (per person)", True), ("Deluxe Beverage Package", False)]
+
+
+class DrinksOnlyProvider(FailingProvider):
+    """Has rooms and drinks but no Wi-Fi, dining or excursions."""
+
+    def research(self, req):
+        r = sample_research(req)
+        r.addons, r.warnings = [a for a in r.addons if a.kind == "beverage"], []
+        return r
+
+
+class IncludesWifiProvider(DrinksOnlyProvider):
+    included_addon_kinds = ("internet", "dining", "excursion")
+
+
+def test_claude_fills_missing_addon_kinds_only():
+    fake = FakeClaude(sample_research(REQ))
+    r, used = run_research(REQ, [DrinksOnlyProvider()], ClaudeResearchProvider(fake, "m"))
+    assert used == "Direct + Claude web research"
+    kinds = [a.kind for a in r.addons]
+    assert kinds.count("beverage") == 2  # the line's own drinks kept, Claude's drinks not added
+    assert {"internet", "dining", "excursion"} <= set(kinds)
+    assert any("Wi-Fi plans" in w and "web research" in w for w in r.warnings)
+
+
+def test_no_claude_call_when_line_includes_the_missing_kinds():
+    fake = FakeClaude(sample_research(REQ))
+    r, used = run_research(REQ, [IncludesWifiProvider()], ClaudeResearchProvider(fake, "m"))
+    assert used == "Direct" and {a.kind for a in r.addons} == {"beverage"}
