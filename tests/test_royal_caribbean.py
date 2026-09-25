@@ -210,3 +210,91 @@ def test_blocked_search_falls_back_to_cloudflare():
     with pytest.raises(ProviderError):
         provider(CloudflareBrowser("", ""), search={}, search_status=403).research(
             ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
+
+
+# ── Rooms API (room-selection JSON) ─────────────────────────────────────
+# Akamai blocks RC's rooms API from our test IPs, so this response follows the
+# shape captured live from Celebrity's identical room-selection API (same app,
+# `brand: C`), with RC-style room names and category codes.
+
+def _subtype(code, name, cat, subtotal, taxes, guarantee=False, left=None):
+    s = {"code": code, "name": name, "guarantee": guarantee, "categoryCode": cat,
+         "pricing": {"invoice": {"subtotal": subtotal, "taxesAndFees": taxes, "total": subtotal + taxes}}}
+    if left:
+        s["roomsLeft"] = left
+    return s
+
+
+ROOMS_API = {"rooms": [{"outcome": "ROOM_FOUND", "options": {"stateroomTypes": [
+    {"code": "INTERIOR", "name": "Interior", "stateroomSubtypes": [_subtype("IN", "Interior", "4V", 900, 210.72)]},
+    {"code": "BALCONY", "name": "Balcony", "stateroomSubtypes": [
+        _subtype("XB", "Balcony", "XB", 1100, 210.72, guarantee=True),
+        _subtype("OB", "Ocean View Balcony", "4D", 1240, 210.72, left=3),
+        _subtype("IB", "Infinite Balcony", "3C", 1300, 210.72),
+    ]},
+]}}]}
+
+
+def rooms_transport(rooms_status=200, seen=None):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if seen is not None:
+            seen.append(request)
+        if request.url.path == "/room-selection/api/v1/rooms":
+            return httpx.Response(rooms_status, json=ROOMS_API) if rooms_status == 200 else httpx.Response(rooms_status, text="Access Denied")
+        return graphql_transport(request)
+    return handler
+
+
+class RoomsApiCF(FakeCF):
+    """Returns the rooms API JSON from the injected in-page fetch."""
+
+    def content(self, payload, attempts=3):
+        if payload.get("addScriptTag") and "/room-selection/api/v1/rooms" in payload["addScriptTag"][0]["content"]:
+            self.calls.append(payload)
+            return f"<html><body><div id='qp-json' data-json='{quote(json.dumps(ROOMS_API))}'></div></body></html>"
+        return super().content(payload, attempts)
+
+
+def rooms_provider(cf, rooms_status):
+    seen = []
+    http = httpx.Client(transport=httpx.MockTransport(rooms_transport(rooms_status, seen)))
+    return RoyalCaribbeanProvider(cf, "https://example.test/graphql", http=http), seen
+
+
+def test_rooms_api_via_cloudflare_one_render_per_sailing():
+    cf = RoomsApiCF()
+    p, seen = rooms_provider(cf, 403)  # direct call blocked by Akamai
+    r = p.research(ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
+    assert [(s.category, s.name, s.code) for s in r.staterooms] == [
+        ("Interior", "Interior (4V)", "4V"),
+        ("Balcony", "Balcony (Guarantee, XB)", "XB"),
+        ("Balcony", "Ocean View Balcony (4D)", "4D"),
+        ("Balcony", "Infinite Balcony (3C)", "3C"),
+    ]
+    ovb = r.staterooms[2]
+    assert ovb.price_per_person == 620 and ovb.taxes_fees_per_person == 105.36 and "3 left" in ovb.notes
+    assert "Guarantee" in r.staterooms[1].notes
+    # Exactly one browser render, of the sailing's room-selection page; no per-class page scraping.
+    (call,) = cf.calls
+    assert call["url"].startswith("https://www.royalcaribbean.com/room-selection/rooms-and-guests?groupId=UT03PCV-123")
+    script = call["addScriptTag"][0]["content"]
+    assert '"brand": "R"' in script and "packageId" in script and "UT03BH01" in script
+    direct = next(q for q in seen if q.url.path == "/room-selection/api/v1/rooms")
+    filt = json.loads(direct.url.params["filter"])
+    assert filt["options"] is True and filt["rooms"] == [{"adultCount": 2, "childCount": 0}]
+
+
+def test_rooms_api_direct_needs_no_browser():
+    cf = RoomsApiCF()
+    p, _ = rooms_provider(cf, 200)
+    r = p.research(ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
+    assert [s.code for s in r.staterooms] == ["4V", "XB", "4D", "3C"] and cf.calls == []
+
+
+def test_rooms_api_blocked_everywhere_falls_back_to_room_pages():
+    cf = FakeCF()  # its in-page fetch returns nothing → scrape the per-class pages
+    p, _ = rooms_provider(cf, 403)
+    r = p.research(ResearchRequest("Royal Caribbean", "UT", "2026-10-26"))
+    assert [s.name for s in r.staterooms] == ["Ocean View Balcony", "Infinite Balcony"]
+    assert any("rooms-and-guests" in c["url"] for c in cf.calls)
+    assert any("cabinClassType=BALCONY" in c["url"] for c in cf.calls)

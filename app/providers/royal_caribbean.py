@@ -3,8 +3,11 @@
 Ported from Quackport (DuckPassport.Web):
   * sailing lookup   — SailingSyncService  (cruiseSearch GraphQL, /cruises/graph)
   * add-on prices    — RcPricingService    (products GraphQL: drinks, Wi-Fi, excursions, dining...)
-  * stateroom prices — RcPricingService + RcSailingDataService.BuildRoomUrl
-                       (room-selection page rendered through Cloudflare Browser Rendering)
+  * stateroom prices — class lead-ins from the cruise search; individual room types
+                       from the room-selection JSON API (/room-selection/api/v1/rooms,
+                       one call per sailing, run in a Cloudflare-rendered page because
+                       Akamai blocks server IPs), falling back to scraping the
+                       room-selection pages (RcSailingDataService.BuildRoomUrl).
 """
 
 import json
@@ -13,7 +16,7 @@ import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Iterator, Optional
-from urllib.parse import unquote
+from urllib.parse import unquote, urlencode
 
 import httpx
 from bs4 import BeautifulSoup
@@ -77,6 +80,8 @@ CLASS_NAMES = {
 }
 
 SEARCH_URL = "https://www.royalcaribbean.com/cruises/graph"
+# JSON API behind the room-selection app (shared by RC and Celebrity, `brand` header R/C).
+ROOMS_API_PATH = "/room-selection/api/v1/rooms"
 SEARCH_HEADERS = {
     "accept": "application/json",
     "content-type": "application/json",
@@ -201,6 +206,51 @@ def _hhmm(t: Optional[str]) -> Optional[str]:
     return t[:5] if t else None
 
 
+def parse_room_options(data: dict, guests: int, source: str, cabin_classes: dict[str, str]) -> dict[str, list[Stateroom]]:
+    """Room types by class id from a room-selection API response (`options: true`).
+
+    Shared by RC and Celebrity (same room-selection app). Fares are per guest,
+    excluding taxes: the invoice subtotal (and taxes) divided by the party size.
+    """
+    guests = max(guests, 1)
+    out: dict[str, list[Stateroom]] = {}
+    types = ((((data.get("rooms") or [{}])[0] or {}).get("options")) or {}).get("stateroomTypes") or []
+    for t in types:
+        cid = (t.get("code") or "").upper()
+        category = cabin_classes.get(cid, "Other")
+        rooms = []
+        for s in t.get("stateroomSubtypes") or []:
+            inv = (s.get("pricing") or {}).get("invoice") or {}
+            taxes = inv.get("taxesAndFees")
+            subtotal = inv.get("subtotal")
+            if subtotal is None and inv.get("total") is not None:
+                subtotal = inv["total"] - (taxes or 0)
+            cat = s.get("categoryCode") or s.get("code")
+            guarantee = bool(s.get("guarantee"))
+            notes = []
+            if guarantee:
+                notes.append("Guarantee: the cruise line assigns the room in this category.")
+            if s.get("roomsLeft"):
+                notes.append(f"{s['roomsLeft']} left at this price.")
+            if guests != 2:
+                notes.append(f"Average per guest for {guests} guests sharing.")
+            rooms.append(
+                Stateroom(
+                    category=category,
+                    name=f"{s.get('name') or cat} ({'Guarantee, ' if guarantee else ''}{cat})",
+                    code=cat,
+                    price_per_person=round(subtotal / guests, 2) if subtotal is not None else None,
+                    taxes_fees_per_person=round(taxes / guests, 2) if taxes is not None else None,
+                    sold_out=subtotal is None,
+                    notes=" ".join(notes) or None,
+                    source=source,
+                )
+            )
+        if rooms:
+            out[cid] = rooms
+    return out
+
+
 class RoyalCaribbeanProvider:
     name = "Royal Caribbean (live)"
     cruise_line = "Royal Caribbean"
@@ -214,6 +264,7 @@ class RoyalCaribbeanProvider:
     brand_label = "Royal Caribbean"
     cabin_classes = CABIN_CLASSES
     class_names = CLASS_NAMES
+    brand_code = "R"  # room-selection API `brand` header
 
     def __init__(self, cf: CloudflareBrowser, graphql_url: str, http: Optional[httpx.Client] = None):
         self.cf = cf
@@ -259,16 +310,15 @@ class RoyalCaribbeanProvider:
         package_code = sailing["id"].split("_")[0] if "_" in sailing.get("id", "") else itin.get("code", "")
         class_rows = self.search_class_fares(sailing)
         detail: dict[str, list[Stateroom]] = {}
-        if self.cf.configured:
-            try:
-                detail = self.fetch_room_types(
-                    code, req.sail_date, cruise.get("id", ""), package_code, req.adults, req.children
-                )
-            except Exception:  # keep the class fares, itinerary and add-ons even if rooms fail
-                log.exception("RC room-type fetch failed")
-            if detail:
-                research.sources.append("royalcaribbean.com room selection")
-        else:
+        try:
+            detail = self.fetch_room_types(
+                code, req.sail_date, cruise.get("id", ""), package_code, req.adults, req.children
+            )
+        except Exception:  # keep the class fares, itinerary and add-ons even if rooms fail
+            log.exception("RC room-type fetch failed")
+        if detail:
+            research.sources.append("royalcaribbean.com room selection")
+        elif not self.cf.configured:
             warnings.append(
                 "Per-room-type prices need Cloudflare Browser Rendering (RC blocks server requests to its "
                 "room pages). Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN."
@@ -449,11 +499,17 @@ class RoyalCaribbeanProvider:
 
     # ── Staterooms ───────────────────────────────────────────────────────
 
-    @staticmethod
-    def room_url(ship_code: str, sail_date: str, group_id: str, package_code: str,
+    def room_selection_url(self, group_id: str, package_code: str, sail_date: str, ship_code: str) -> str:
+        """Deep link to the sailing's rooms-and-guests step (booking flow start)."""
+        return (
+            f"{self.site}/room-selection/rooms-and-guests?groupId={group_id}&packageCode={package_code}"
+            f"&sailDate={sail_date}&shipCode={ship_code}&country=USA&selectedCurrencyCode=USD"
+        )
+
+    def room_url(self, ship_code: str, sail_date: str, group_id: str, package_code: str,
                  cabin_class: str, adults: int, children: int) -> str:
         return (
-            "https://www.royalcaribbean.com/room-selection/room-subtype"
+            f"{self.site}/room-selection/room-subtype"
             f"?groupId={group_id}&packageCode={package_code}&sailDate={sail_date}"
             f"&country=USA&selectedCurrencyCode=USD&shipCode={ship_code}&cabinClassType={cabin_class}"
             f"&roomIndex=0&r0a={adults}&r0c={children}&r0b=n&r0r=n&r0s=n&r0q=n&r0t=n"
@@ -493,14 +549,102 @@ class RoyalCaribbeanProvider:
         return rows
 
     def fetch_room_types(self, ship_code, sail_date, group_id, package_code, adults, children) -> dict[str, list[Stateroom]]:
-        """Per-room-type fares by cabin class, from room pages rendered through Cloudflare.
+        """Every room type by cabin class: the rooms API (direct, then in a Cloudflare page),
+        else the room-selection pages scraped through Cloudflare. Empty if neither works."""
+        rooms = self.rooms_api_types(ship_code, sail_date, group_id, package_code, adults, children)
+        if rooms is not None:
+            return rooms
+        if not self.cf.configured:
+            return {}
+        return self.fetch_room_pages(ship_code, sail_date, group_id, package_code, adults, children)
 
-        The four classes load in parallel (Cloudflare's paid plan allows many
-        concurrent browsers; on the free plan the client backs off on 429s).
+    def rooms_api_types(self, ship_code, sail_date, group_id, package_code, adults, children) -> Optional[dict[str, list[Stateroom]]]:
+        """Room types from the room-selection API, or None if it couldn't be reached.
+
+        One call (`options: true`) returns every room type of every class, priced
+        for the real party. Tried directly first (Celebrity answers server IPs; RC's
+        Akamai doesn't), then from inside a Cloudflare-rendered page: 1 render per sailing.
         """
+        filt = {
+            "countryCode": "USA",
+            "packageId": package_code,
+            "sailDate": sail_date,
+            "currencyCode": "USD",
+            "language": "en",
+            "options": True,
+            "roomNumbers": False,
+            "rooms": [{"adultCount": adults, "childCount": children}],
+        }
+        path = f"{ROOMS_API_PATH}?{urlencode({'filter': json.dumps(filt, separators=(',', ':'))})}"
+        headers = {"brand": self.brand_code, "country": "USA", "content-type": "application/json"}
+        page_url = self.room_selection_url(group_id, package_code, sail_date, ship_code)
+        data = None
+        try:
+            data = self._get_json_direct(f"{self.site}{path}", {
+                **headers, "accept": "application/json", "user-agent": USER_AGENT, "referer": page_url,
+            })
+        except (httpx.HTTPError, ValueError) as exc:
+            log.info("%s rooms API direct call failed: %s", self.brand_label, exc)
+            if self.cf.configured:
+                try:
+                    data = json.loads(self._fetch_in_page(path, "GET", headers, None, page_url, delay_ms=2000))
+                except (ProviderError, ValueError) as exc2:
+                    log.warning("%s rooms API via Cloudflare failed: %s", self.brand_label, exc2)
+        if not isinstance(data, dict) or not ((data.get("rooms") or [{}])[0] or {}).get("options"):
+            return None
+        return parse_room_options(data, adults + children, page_url, self.cabin_classes)
+
+    def _get_json_direct(self, url: str, headers: dict) -> dict:
+        for attempt in range(3):
+            resp = self.http.get(url, headers=headers)
+            if resp.status_code == 429 or resp.status_code >= 500:
+                time.sleep(2 * (attempt + 1))
+                continue
+            resp.raise_for_status()
+            return resp.json()
+        raise httpx.HTTPError("kept failing (rate limited or server error)")
+
+    def _fetch_in_page(self, path: str, method: str, headers: dict, body: Optional[str], page_url: str,
+                       delay_ms: int = 0) -> str:
+        """Run a same-origin fetch inside a Cloudflare-rendered page of this brand's site (so
+        Akamai sees a real browser) and read the response text back from the DOM.
+        `delay_ms` gives Akamai's sensor script time to validate the session first."""
+        if not self.cf.configured:
+            raise ProviderError(f"{self.brand_label} blocked a direct request and Cloudflare isn't configured")
+        opts = {"method": method, "headers": headers}
+        if body is not None:
+            opts["body"] = body
+        script = (
+            "setTimeout(async function(){var out;try{var r=await fetch(" + json.dumps(path) + "," + json.dumps(opts) + ");"
+            "out=await r.text();if(!r.ok){out='ERR:HTTP '+r.status+' '+out.slice(0,120);}}"
+            "catch(e){out='ERR:'+(e&&e.message||e);}"
+            "var d=document.createElement('div');d.id='qp-json';"
+            "d.setAttribute('data-json',encodeURIComponent(out));document.body.appendChild(d);}," + str(int(delay_ms)) + ");"
+        )
+        try:
+            html = self.cf.content(
+                {
+                    "url": page_url,
+                    "gotoOptions": {"waitUntil": "domcontentloaded", "timeout": 30000},
+                    "addScriptTag": [{"content": script}],
+                    "waitForSelector": {"selector": "#qp-json", "timeout": 55000},
+                }
+            )
+        except BrowserRenderingError as exc:
+            raise ProviderError(f"{self.brand_label} request via Cloudflare failed: {exc}") from exc
+        node = BeautifulSoup(html, "html.parser").find(id="qp-json")
+        if node is None:
+            raise ProviderError(f"{self.brand_label} page returned no data")
+        text = unquote(node.get("data-json", ""))
+        if text.startswith("ERR:"):
+            raise ProviderError(f"{self.brand_label} in-page request failed: {text[:200]}")
+        return text
+
+    def fetch_room_pages(self, ship_code, sail_date, group_id, package_code, adults, children) -> dict[str, list[Stateroom]]:
+        """Last resort: scrape each class's room-selection page through Cloudflare, in parallel."""
 
         def one(cabin_class: str) -> tuple[str, list[Stateroom]]:
-            category = CABIN_CLASSES[cabin_class]
+            category = self.cabin_classes[cabin_class]
             url = self.room_url(ship_code, sail_date, group_id, package_code, cabin_class, adults, children)
             for try_url in (url, url.replace("/room-selection/room-subtype", "/room-selection/type-and-subtype")):
                 try:
@@ -519,8 +663,8 @@ class RoyalCaribbeanProvider:
                     return cabin_class, found
             return cabin_class, []
 
-        with ThreadPoolExecutor(max_workers=len(CABIN_CLASSES)) as pool:
-            return {cls: rooms for cls, rooms in pool.map(one, CABIN_CLASSES) if rooms}
+        with ThreadPoolExecutor(max_workers=len(self.cabin_classes)) as pool:
+            return {cls: rooms for cls, rooms in pool.map(one, self.cabin_classes) if rooms}
 
     def merge_rooms(self, class_rows: list[Stateroom], detail: dict[str, list[Stateroom]],
                     warnings: list[str]) -> list[Stateroom]:
@@ -539,6 +683,9 @@ class RoyalCaribbeanProvider:
                 out.append(row)
             else:
                 warnings.append(f"No {category} prices found on {self.brand_label} (sold out or page changed).")
+        for cabin_class, rooms in detail.items():  # classes the API has that we don't map
+            if cabin_class not in self.cabin_classes:
+                out.extend(rooms)
         return out
 
     @staticmethod
