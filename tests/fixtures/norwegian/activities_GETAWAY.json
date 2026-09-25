@@ -1,0 +1,128 @@
+[
+ {
+  "code": "DINING.24 Hour.O’Sheehan’s Néighborhood Bar & Grill - BA - GA - Older Fleet",
+  "title": "O’Sheehan’s Neighborhood Bar & Grill",
+  "categories": [
+   "COMPLIMENTARY_DINING"
+  ],
+  "cuisine": "24-Hour Eatery",
+  "pricingStatement": "Complimentary"
+ },
+ {
+  "code": "DINING.American Diner - BA - Plus Class",
+  "title": "American Diner",
+  "categories": [
+   "COMPLIMENTARY_DINING"
+  ],
+  "cuisine": "Pool Grill",
+  "pricingStatement": "Complimentary"
+ },
+ {
+  "code": "DINING.Buffet.Garden Café - 4",
+  "title": "Garden Café",
+  "categories": [
+   "COMPLIMENTARY_DINING"
+  ],
+  "cuisine": "Buffet",
+  "pricingStatement": "Complimentary"
+ },
+ {
+  "code": "DINING.Main Dining.Savor.06",
+  "title": "Savor",
+  "categories": [
+   "COMPLIMENTARY_DINING"
+  ],
+  "cuisine": "Main Dining",
+  "pricingStatement": "Complimentary"
+ },
+ {
+  "code": "DINING.main.Taste.04",
+  "title": "Taste",
+  "categories": [
+   "COMPLIMENTARY_DINING"
+  ],
+  "cuisine": "Main Dining",
+  "pricingStatement": "Complimentary"
+ },
+ {
+  "code": "DINING.Main.Dining.Manhattan.Room.05",
+  "title": "The Manhattan Room",
+  "categories": [
+   "COMPLIMENTARY_DINING"
+  ],
+  "cuisine": "Main Dining",
+  "pricingStatement": "Complimentary"
+ },
+ {
+  "code": "DINING.The.Haven.Restaurant - 2",
+  "title": "The Haven Restaurant",
+  "categories": [
+   "COMPLIMENTARY_DINING"
+  ],
+  "cuisine": "Various Cuisines",
+  "pricingStatement": "Complimentary"
+ },
+ {
+  "code": "DINING.Asian.Shanghai's Noodle Bar - 01",
+  "title": "Shanghai's Noodle Bar",
+  "categories": [
+   "COMPLIMENTARY_DINING"
+  ],
+  "cuisine": "Asian",
+  "pricingStatement": "Complimentary"
+ },
+ {
+  "code": "DINING.Cagneys Steakhouse.9",
+  "title": "Cagney's Steakhouse",
+  "categories": [
+   "SPECIALTY_DINING"
+  ],
+  "cuisine": "Steakhouse",
+  "pricingStatement": "Cover Charge**"
+ },
+ {
+  "code": "DINING.JapaneseGrill.Teppanyaki.GetawayClass",
+  "title": "Teppanyaki",
+  "categories": [
+   "SPECIALTY_DINING"
+  ],
+  "cuisine": "Japanese Grill",
+  "pricingStatement": "Cover Charge**"
+ },
+ {
+  "code": "DINING.La Cucina- Bliss - Joy- Escape - BA Class - Epic - Jewel Class - POA- Dawn - Star - Sun - Sky",
+  "title": "La Cucina",
+  "categories": [
+   "SPECIALTY_DINING"
+  ],
+  "cuisine": "Italian",
+  "pricingStatement": "Cover Charge**"
+ },
+ {
+  "code": "DINING.Le Bistro.8",
+  "title": "Le Bistro",
+  "categories": [
+   "SPECIALTY_DINING"
+  ],
+  "cuisine": "French",
+  "pricingStatement": "Cover Charge**"
+ },
+ {
+  "code": "DINING.Ocean Blue - Getaway",
+  "title": "Ocean Blue",
+  "categories": [
+   "SPECIALTY_DINING"
+  ],
+  "cuisine": "Seafood",
+  "pricingStatement": "Cover Charge**"
+ },
+ {
+  "code": "DINING.Dolce Gelato - Encore - Bliss - Escape - BA Class - POA",
+  "title": "Dolce Gelato",
+  "categories": [
+   "SPECIALTY_DINING"
+  ],
+  "cuisine": "Gelato",
+  "pricingStatement": "À la carte*"
+ }
+]

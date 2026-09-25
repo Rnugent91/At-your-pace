@@ -1,0 +1,81 @@
+{
+ "staterooms": [
+  {
+   "stateroomId": "0",
+   "travelProtection": {
+    "isOverride": false,
+    "subtitle": "Help Protect Your Purchase (Recommended)",
+    "errorMessage": "Please make a Travel Protection selection. Note that NorwegianCare is not available for purchase after your Final Payment date.",
+    "options": [
+     {
+      "name": "NorwegianCare",
+      "price": 150,
+      "code": "NOC",
+      "planDetailsLink": "https://www.archinsurancesolutions.com/coverage/NCL/NorwegianCare",
+      "planDetails": [
+       {
+        "name": "medical",
+        "title": "Medical",
+        "description": "Up to $50,000"
+       },
+       {
+        "name": "evacuation",
+        "title": "Evacuation",
+        "description": "Up to $250,000"
+       },
+       {
+        "name": "baggage-loss",
+        "title": "Baggage Loss",
+        "description": "Up to $1,500"
+       }
+      ]
+     },
+     {
+      "name": "No, I Am Willing To Take The Risk",
+      "description": "Why risk it? By skipping out on travel protection, you accept the risk of paying for cancellations, delays, or emergencies yourself.",
+      "price": 0,
+      "code": "NON",
+      "planDetails": []
+     }
+    ],
+    "descriptionItems": [
+     "Up to 100% cash-back reimbursement for covered cancellation causes, or 90% NorwegianCare credits, should your cancellation reason not qualify for reimbursement",
+     "Coverage for lost, stolen, damaged or delayed luggage",
+     "Reimburses your missed vacation cost for covered interruptions, plus medical treatment and evacuation expenses if you become ill or injured while traveling",
+     "24/7 worldwide emergency assistance"
+    ],
+    "descriptionTitle": "With NorwegianCare Travel Protection you get:",
+    "title": "NorwegianCare Travel Protection",
+    "popularTag": "Most Popular"
+   },
+   "prepaidServices": {
+    "subtitle": "Pre-Paid Service Charges",
+    "priceTotal": 120,
+    "isEditable": true,
+    "code": "PPSCUS",
+    "hoverDescription": "Pay all daily service charges before you embark for convenient budget planning and additional freedom onboard.",
+    "guestPrices": [
+     {
+      "guestRefNumber": 1,
+      "price": 60,
+      "eligible": true
+     },
+     {
+      "guestRefNumber": 2,
+      "price": 60,
+      "eligible": true
+     }
+    ],
+    "pricePerPerson": 20,
+    "title": "Pre-Paid Service Charges",
+    "optInLabel": "I want to pre-pay my service charges",
+    "description": "The convenience of pre-paying service charges allows you to plan your budget prior to your cruise giving you additional freedom while on board. A discretionary charge of $20 USD per person per day for all guests 3 years or older will automatically be added to your onboard account. Your service charges will total $120 USD for all guests, for your entire cruise. Guests sailing to Hawaii will be charged an additional 4.275% Pre Paid Service Charge GET Tax.",
+    "checkedIn": false
+   }
+  }
+ ],
+ "currency": {
+  "code": "USD",
+  "symbol": ""
+ }
+}

@@ -30,8 +30,10 @@ def fx(name: str):
 class NCLSite:
     """A fake ncl.com backed by the fixtures; records every request."""
 
-    def __init__(self, status: int = 200, fail_availability: bool = False, fail_summary_for: tuple = ()):
+    def __init__(self, status: int = 200, fail_availability: bool = False, fail_summary_for: tuple = (),
+                 fail_extras: bool = False):
         self.status = status
+        self.fail_extras = fail_extras
         self.fail_availability = fail_availability
         self.fail_summary_for = set(fail_summary_for)
         self.requests: list[httpx.Request] = []
@@ -66,6 +68,23 @@ class NCLSite:
             f = body["stateroomFilters"][0]
             name = "price_summary_24223987_HI.json" if f["stateroomTypeCode"] == "HAVEN" else "price_summary_24223987_IX.json"
             return httpx.Response(200, json=fx(name))
+        if path == f"/api/vacation-builder/itinerary/{CODE}/package/{PKG}/shorex":
+            if self.fail_extras:
+                return httpx.Response(500, text="boom")
+            return httpx.Response(200, json=fx("shorex_GETAWAY3MIANASNPIMIA_24223987.json"))
+        if path == "/api/vacation-builder/travel-extras":
+            if self.fail_extras:
+                return httpx.Response(400, json={"message": "bad"})
+            return httpx.Response(200, json=fx("travel_extras_24223987_IX.json"))
+        if path == "/api/vacation-builder/ships/GETAWAY/activities":
+            return httpx.Response(200, json=fx("activities_GETAWAY.json"))
+        if path == "/cruise-deals/free-at-sea":
+            if self.fail_extras:
+                return httpx.Response(404, text="<html>not found</html>")
+            return httpx.Response(200, text=(FIX / "free_at_sea_faq.html").read_text(encoding="utf-8"))
+        if path == "/shore-excursions/api/mobilePagination":
+            port = request.url.params["portCode"]
+            return httpx.Response(200, text=(FIX / f"excursions_{port}.html").read_text(encoding="utf-8"))
         return httpx.Response(404, json={"message": "not found"})
 
 
@@ -254,6 +273,12 @@ class FakeCF:
 
     def content(self, payload: dict) -> str:
         self.payloads.append(payload)
+        if "addScriptTag" not in payload:  # a plain page render
+            was, self.site.status = self.site.status, 200
+            try:
+                return self.site.handler(httpx.Request("GET", payload["url"])).text
+            finally:
+                self.site.status = was
         script = payload["addScriptTag"][0]["content"]
         start = script.index("fetch(") + len("fetch(")
         path, opts = json.loads("[" + script[start:script.index(");out=")] + "]")
@@ -325,3 +350,72 @@ def test_iter_catalog_without_taxes_keeps_all_in_prices():
     rows = list(provider(NCLSite(), catalog_taxes=False).iter_catalog())
     may7 = next(r for r in rows if r.sailing_key == PKG)
     assert may7.taxes_fees_per_person is None and may7.prices["Interior"] == 379
+
+
+# ── extras (add-ons) ────────────────────────────────────────────────────
+
+
+def test_research_addons():
+    site = NCLSite()
+    r = provider(site).research(ResearchRequest("Norwegian", "Norwegian Getaway", "2027-05-07"))
+    by = {a.name: a for a in r.addons}
+    kinds = {}
+    for a in r.addons:
+        kinds[a.kind] = kinds.get(a.kind, 0) + 1
+    assert kinds == {"beverage": 8, "dining": 6, "excursion": 9, "internet": 4, "other": 2}
+
+    # Free at Sea charges (sailing-specific) are kept.
+    assert by["Free at Sea: Unlimited Open Bar"].price == 96
+    # Service charges and travel protection: quoted for this sailing by the booking flow.
+    ppsc = by["Daily service charges (pre-paid)"]
+    assert (ppsc.price, ppsc.price_unit, ppsc.kind) == (20, "per_person_per_day", "other")
+    tp = by["Travel protection: NorwegianCare"]
+    assert (tp.price, tp.price_unit) == (75, "per_person")  # $150 for the stateroom / 2 guests
+    # Published prices from the Free at Sea page and the beverage flyer.
+    assert by["Free at Sea Plus upgrade"].price == 49.99
+    onboard = by["Unlimited Open Bar (bought onboard, without Free at Sea)"]
+    assert onboard.price == 45 and "20% gratuity" in onboard.description
+    assert by["Unlimited Soda & Juice Package"].price == 12.5
+    assert by["Unlimited Starbucks® Package"].price_unit == "per_person_per_day"
+    assert by["Water Package: 24 × 16oz bottles"].price_unit == "flat"
+    wifi = by["Wi-Fi: Streaming Voyage Wi-Fi Pass"]
+    assert (wifi.price, wifi.price_unit) == (39.99, "per_device_per_day")
+    assert by["Wi-Fi: additional device"].price == 14.99
+    # Specialty restaurants on this ship, priced by the FAQ's cuisine groups; cafés left out.
+    assert by["Cagney's Steakhouse (cover charge)"].price == 60
+    assert by["Teppanyaki (cover charge)"].price == 60
+    assert by["La Cucina (cover charge)"].price == 40
+    assert not any("Gelato" in n or "Savor" in n for n in by)
+    # Excursions offered on this sailing, with each port's published adult "from" price.
+    ex = by["Blue Lagoon Island Beach Day"]
+    assert (ex.kind, ex.price, ex.port, ex.price_unit) == ("excursion", 109.99, "Nassau, Bahamas", "per_person")
+    assert "child from $87.99" in ex.description and ex.source.endswith("/shore-excursions/NAS_46/Blue-Lagoon-Island-Beach-Day")
+    cabanas = [a for a in r.addons if a.kind == "excursion" and "Cabana" in a.name]
+    assert cabanas and all(a.price_unit == "flat" for a in cabanas)
+    assert {a.port for a in r.addons if a.kind == "excursion" and not a.name.startswith("Free at Sea")} == {"Nassau, Bahamas", "Great Stirrup Cay, Bahamas"}
+    assert any("published 'from' prices" in w for w in r.warnings)
+    # Travel extras priced for the cheapest room with its Free at Sea promotion.
+    te = next(json.loads(q.content) for q in site.requests if q.url.path.endswith("/travel-extras"))
+    assert te["stateroomFilters"][0]["pricedCategoryCode"] == "IX"
+    assert te["stateroomFilters"][0]["fareCodes"] == ["ALL4CHO"]
+
+
+def test_research_survives_addon_failures():
+    r = provider(NCLSite(fail_extras=True)).research(ResearchRequest("Norwegian", "Norwegian Getaway", "2027-05-07"))
+    assert r.staterooms and r.itinerary
+    names = {a.name for a in r.addons}
+    assert "Free at Sea: Unlimited Open Bar" in names and "Cagney's Steakhouse (cover charge)" in names
+    assert not any(a.kind == "excursion" and not a.name.startswith("Free at Sea") for a in r.addons)
+    assert any("shore excursions couldn't be loaded" in w for w in r.warnings)
+    assert any("service charges / travel protection couldn't be loaded" in w for w in r.warnings)
+    assert any("published package prices couldn't be loaded" in w for w in r.warnings)
+
+
+def test_cover_charge_matching():
+    from app.providers.norwegian import cover_charge
+
+    cover = {"steak": 60.0, "brazil": 50.0, "food republic": 50.0, "bbq": 40.0, "french": 60.0}
+    assert cover_charge("Moderno Churrascaria", "Churrascaria", cover) == 50
+    assert cover_charge("Q Texas Smokehouse", "BBQ", cover) == 40
+    assert cover_charge("Jefferson's Bistro", "French", cover) == 60
+    assert cover_charge("The Raw Bar", "Raw Bar", cover) is None

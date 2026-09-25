@@ -1,0 +1,122 @@
+[
+ {
+  "code": "NAS_46",
+  "seawareCode": "NASN46",
+  "title": "Blue Lagoon Island Beach Day",
+  "port": {
+   "code": "NAS",
+   "title": "Nassau, Bahamas"
+  },
+  "difficulty": {
+   "code": "level_1",
+   "title": "Easy"
+  },
+  "featured": true,
+  "weight": 2
+ },
+ {
+  "code": "NAS_25",
+  "seawareCode": "NASN25",
+  "title": "Atlantis Aquaventure",
+  "port": {
+   "code": "NAS",
+   "title": "Nassau, Bahamas"
+  },
+  "difficulty": {
+   "code": "level_2",
+   "title": "Moderate"
+  },
+  "featured": true,
+  "weight": 4
+ },
+ {
+  "code": "NAS_08",
+  "seawareCode": "NASN08",
+  "title": "Seahorse Sail & Snorkel",
+  "port": {
+   "code": "NAS",
+   "title": "Nassau, Bahamas"
+  },
+  "difficulty": {
+   "code": "level_2",
+   "title": "Moderate"
+  },
+  "featured": true,
+  "weight": 6
+ },
+ {
+  "code": "NAS_04",
+  "seawareCode": "NASN04",
+  "title": "Blue Lagoon Dolphin Encounter & Beach Day",
+  "port": {
+   "code": "NAS",
+   "title": "Nassau, Bahamas"
+  },
+  "difficulty": {
+   "code": "level_1",
+   "title": "Easy"
+  },
+  "featured": false,
+  "weight": 8
+ },
+ {
+  "code": "NPI_75",
+  "seawareCode": "NPIN75",
+  "title": "Great Tides Waterpark Tickets",
+  "port": {
+   "code": "NPI",
+   "title": "Great Stirrup Cay, Bahamas"
+  },
+  "difficulty": {
+   "code": "level_2",
+   "title": "Moderate"
+  },
+  "featured": true,
+  "weight": 1
+ },
+ {
+  "code": "NPI_74",
+  "seawareCode": "NPIN74",
+  "title": "Great Tides Waterpark Cabana (up to 6 guests)",
+  "port": {
+   "code": "NPI",
+   "title": "Great Stirrup Cay, Bahamas"
+  },
+  "difficulty": {
+   "code": "level_2",
+   "title": "Moderate"
+  },
+  "featured": true,
+  "weight": 2
+ },
+ {
+  "code": "NPI_53",
+  "seawareCode": "NPIN53",
+  "title": "Stingray City & Swimming Pigs on Treasure Island",
+  "port": {
+   "code": "NPI",
+   "title": "Great Stirrup Cay, Bahamas"
+  },
+  "difficulty": {
+   "code": "level_2",
+   "title": "Moderate"
+  },
+  "featured": false,
+  "weight": 5
+ },
+ {
+  "code": "NPI_14",
+  "seawareCode": "NPIN14",
+  "title": "WaveRunner® Tour - 2 Guests (1 Driver & 1 Rider)",
+  "port": {
+   "code": "NPI",
+   "title": "Great Stirrup Cay, Bahamas"
+  },
+  "difficulty": {
+   "code": "level_3",
+   "title": "Challenging"
+  },
+  "featured": false,
+  "weight": 11
+ }
+]

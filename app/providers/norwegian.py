@@ -133,6 +133,49 @@ ADDON_KINDS = {
     "shorex-offer": "excursion",
 }
 
+FAS_PAGE = "/cruise-deals/free-at-sea"
+BEVERAGE_FLYER = "/content/dam/ncl/us/en/food---beverage/1938394-BEV-Package-Flyer-UOBP-PPBP-Update.pdf"
+
+# Published prices from NCL's beverage flyer (PDF, "Limited Time FAS PLUS 04/26", for 2026 sailings).
+# The PDF isn't parsed at run time (no PDF library); these are shown as published prices
+# with the flyer as the source. Re-check them when the flyer changes.
+FLYER_BEVERAGES = [
+    # (name, price, unit, unit label, description)
+    ("Unlimited Soda & Juice Package", 12.50, "per_person_per_day", "per person, per day (ages 3+)",
+     "Fountain sodas and juices. Included in Free at Sea's Unlimited Open Bar (and given to guests 1-2 under 21 "
+     "who take it); can be bought on its own if the open bar isn't selected."),
+    ("Unlimited Starbucks® Package", 16.50, "per_person_per_day", "per person, per day",
+     "Specialty coffees, teas and Refreshers from Starbucks® locations. Bought separately from Free at Sea "
+     "(included in Free at Sea Plus)."),
+    ("Water Package: 12 × 16oz bottles", 19.95, "flat", "per package", "Bought separately from Free at Sea."),
+    ("Water Package: 24 × 16oz bottles", 34.95, "flat", "per package", "Bought separately from Free at Sea."),
+    ("Water Package: 48 × 16oz bottles", 49.95, "flat", "per package", "Bought separately from Free at Sea."),
+]
+
+# The Free at Sea FAQ groups specialty restaurants by cuisine for its cover charges
+# ("Steak, Teppanyaki / Hasuki, French, and Seafood have a $60 cover charge. ...").
+# Keyword in that sentence → words that identify the restaurant in NCL's ship data.
+CUISINE_ALIASES = {
+    "steak": ("steak",),
+    "teppanyaki": ("teppanyaki", "japanese grill"),
+    "hasuki": ("hasuki",),
+    "french": ("french", "bistro"),
+    "seafood": ("seafood",),
+    "brazil": ("brazil", "churrascaria"),
+    "asian": ("asian",),
+    "food republic": ("food republic",),
+    "sushi": ("sushi",),
+    "italian": ("italian",),
+    "bbq": ("bbq", "smokehouse"),
+    "pincho": ("pincho",),
+    "mexican": ("mexican",),
+}
+
+# Excursions sold per cabana / villa / bed rather than per guest.
+PER_UNIT_EXCURSION = re.compile(r"cabana|villa|daybed|pool ?bed|\bfor two\b|\(up to \d+", re.I)
+
+MAX_EXCURSIONS_PER_PORT = 40  # NCL's own order (featured first); a big port lists ~50
+
 CATALOG_WORKERS = 8
 RETRIES = 4
 
@@ -222,6 +265,78 @@ def _money(v: Any) -> Optional[float]:
         return round(float(v), 2) if v is not None else None
     except (TypeError, ValueError):
         return None
+
+
+def _clean(text: Optional[str]) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", text or "")).replace("™", "").strip()
+
+
+def _num(text: str) -> float:
+    return float(text.replace(",", ""))
+
+
+def parse_fas_page(html: str) -> dict:
+    """Published prices from the Free at Sea page's FAQ (onboard open bar, FAS Plus, Wi-Fi, cover charges)."""
+    soup = BeautifulSoup(html or "", "html.parser")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+    text = re.sub(r"\s+", " ", soup.get_text(" ")).replace("™", "")
+    out: dict = {"wifi": [], "cover": {}}
+    m = re.search(r"Free at Sea Plus for just \$([\d.,]+) per person,? per day", text)
+    if m:
+        out["fas_plus"] = _num(m.group(1))
+    m = re.search(r"Unlimited Open Bar package can be purchased onboard[^$]*?\$([\d.,]+)\s*/?\s*per person\s*/?\s*per day"
+                  r"\s*\+\s*(\d+)% gratuity", text)
+    if m:
+        out["open_bar"] = (_num(m.group(1)), int(m.group(2)))
+    for m in re.finditer(r"((?:Streaming )?Voyage Wi-Fi Pass(?: \([^)]*\))?) for \$([\d.,]+) per stateroom per day", text):
+        out["wifi"].append((m.group(1), _num(m.group(2)), "per stateroom (1 device), per day"))
+    m = re.search(r"Additional devices may be added for \$([\d.,]+) per device per day", text)
+    if m:
+        out["wifi"].append(("Wi-Fi: additional device", _num(m.group(1)), "per device, per day"))
+    for m in re.finditer(r"([A-Z][^.$]{2,120}?) have a \$(\d+) cover charge", text):
+        for kw in re.split(r",|/|\band\b", m.group(1).rsplit(":", 1)[-1]):
+            kw = kw.strip().lower()
+            if kw:
+                out["cover"][kw] = float(m.group(2))
+    return out
+
+
+def cover_charge(title: str, cuisine: Optional[str], cover: dict[str, float]) -> Optional[float]:
+    hay = f"{title} {cuisine or ''}".lower()
+    for kw, price in cover.items():
+        if any(alias in hay for alias in CUISINE_ALIASES.get(kw, (kw,))):
+            return price
+    return None
+
+
+def parse_port_excursions(html: str) -> dict[str, dict]:
+    """Excursion code → published 'from' prices etc., from the shore-excursions port listing."""
+    out: dict[str, dict] = {}
+    soup = BeautifulSoup(html or "", "html.parser")
+    for art in soup.find_all("article"):
+        link = art.find("a", href=re.compile(r"/shore-excursions/[A-Z0-9]+_\w+/"))
+        if not link:
+            continue
+        code = re.search(r"/shore-excursions/([A-Z0-9]+_\w+)/", link["href"]).group(1)
+        prices = {}
+        for li in art.select("ul.price li"):
+            label = li.get_text(" ", strip=True)
+            m = re.search(r"\$\s*([\d,]+(?:\.\d+)?)", label)
+            if m:
+                prices["child" if "child" in label.lower() else "adult"] = _num(m.group(1))
+        h2 = art.find("h2")
+        dur = art.select_one(".last-column .duration .value")
+        level = art.select_one(".last-column .activity .level")
+        out[code] = {
+            "title": h2.get_text(" ", strip=True) if h2 else None,
+            "adult": prices.get("adult"),
+            "child": prices.get("child"),
+            "duration": re.sub(r"\s+", " ", dur.get_text(" ", strip=True)) if dur else None,
+            "level": level.get_text(strip=True) if level else None,
+            "href": link["href"].replace(" ", "").split("?")[0],
+        }
+    return out
 
 
 class NorwegianProvider:
@@ -324,6 +439,42 @@ class NorwegianProvider:
         except ValueError as exc:
             raise ProviderError(f"NCL request {path.split('?')[0]} returned non-JSON in-page: {text[:120]}") from exc
 
+    def _text(self, path: str, params: Optional[dict] = None) -> str:
+        """GET an ncl.com HTML page/fragment directly, or rendered through Cloudflare if blocked."""
+        if params:
+            path = f"{path}?{urlencode(params)}"
+        last = ""
+        if not self._blocked:
+            for attempt in range(RETRIES):
+                with self._lock:
+                    self.calls += 1
+                try:
+                    resp = self.http.get(self.base_url + path, headers={**BROWSER_HEADERS, "accept": "text/html,*/*"})
+                except httpx.HTTPError as exc:
+                    last = f"{type(exc).__name__}: {exc}"
+                    self._sleep(1 + attempt)
+                    continue
+                if resp.status_code == 429 or resp.status_code >= 500:
+                    last = f"HTTP {resp.status_code}"
+                    self._sleep(2 * (attempt + 1))
+                    continue
+                if resp.status_code in (401, 403):
+                    last = f"HTTP {resp.status_code}"
+                    break
+                if resp.status_code >= 400:
+                    raise ProviderError(f"NCL {path.split('?')[0]} → HTTP {resp.status_code}")
+                return resp.text
+            if self.cf is None or not self.cf.configured:
+                raise ProviderError(f"NCL page {path.split('?')[0]} failed: {last}")
+            self._blocked = True
+        with self._lock:
+            self.calls += 1
+        try:
+            return self.cf.content({"url": self.base_url + path,
+                                    "gotoOptions": {"waitUntil": "domcontentloaded", "timeout": 30000}})
+        except BrowserRenderingError as exc:
+            raise ProviderError(f"NCL page {path.split('?')[0]} failed in browser: {exc}") from exc
+
     # ── API wrappers ─────────────────────────────────────────────────────
 
     def search(self, **filters) -> list[dict]:
@@ -409,36 +560,52 @@ class NorwegianProvider:
         if first.get("isPackage") or first.get("isFlyCruise"):
             warnings.append("This NCL price is for a package (cruisetour or fly-cruise), not cruise-only.")
 
-        try:
-            research.itinerary = self.map_days(self.events(code, pkg), research.sail_date)
-        except ProviderError as exc:
-            log.warning("NCL itinerary fetch failed: %s", exc)
-            warnings.append(f"NCL's day-by-day itinerary couldn't be loaded: {exc}")
+        # The day-by-day itinerary and the extras don't depend on the room prices: fetch them alongside.
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            f_events = pool.submit(self.events, code, pkg)
+            f_avail = pool.submit(self.availability, pkg, guests)
+            try:
+                avail: Optional[dict] = f_avail.result()
+            except ProviderError as exc:
+                avail = None
+                log.warning("NCL stateroom categories failed: %s", exc)
+                warnings.append(f"NCL's stateroom categories couldn't be loaded ({exc}); showing lowest price per room type.")
+            f_extras = pool.submit(self.fetch_extras, code, pkg, ship.get("code") or ship_code or "", guests, avail)
 
-        taxes: Optional[float] = None
-        fas: dict[str, dict] = {}
-        try:
-            avail = self.availability(pkg, guests)
-            fas, taxes = self.fetch_type_summaries(pkg, avail, guests)
-            research.staterooms = self.map_categories(avail, taxes, fas, guests, source)
-        except ProviderError as exc:
-            log.warning("NCL stateroom categories failed: %s", exc)
-            warnings.append(f"NCL's stateroom categories couldn't be loaded ({exc}); showing lowest price per room type.")
-        if not research.staterooms:
+            taxes: Optional[float] = None
+            fas: dict[str, dict] = {}
+            if avail is not None:
+                try:
+                    fas, taxes = self.fetch_type_summaries(pkg, avail, guests)
+                    research.staterooms = self.map_categories(avail, taxes, fas, guests, source)
+                except ProviderError as exc:
+                    log.warning("NCL stateroom prices failed: %s", exc)
+                    warnings.append(f"NCL's stateroom prices couldn't be loaded ({exc}); showing lowest price per room type.")
+            if not research.staterooms:
+                if taxes is None:
+                    taxes = self.sailing_taxes(pkg, guests)
+                research.staterooms = self.lead_in_rooms(rows, taxes, source)
             if taxes is None:
-                taxes = self.sailing_taxes(pkg, guests)
-            research.staterooms = self.lead_in_rooms(rows, taxes, source)
-        if taxes is None:
-            warnings.append("NCL prices include taxes, fees & port expenses; the split couldn't be loaded, "
-                            "so the prices shown are all-in.")
+                warnings.append("NCL prices include taxes, fees & port expenses; the split couldn't be loaded, "
+                                "so the prices shown are all-in.")
 
-        research.addons = self.fas_addons(fas)
-        if research.addons:
+            try:
+                research.itinerary = self.map_days(f_events.result(), research.sail_date)
+            except ProviderError as exc:
+                log.warning("NCL itinerary fetch failed: %s", exc)
+                warnings.append(f"NCL's day-by-day itinerary couldn't be loaded: {exc}")
+            extras, extra_warnings, extra_sources = f_extras.result()
+
+        research.addons = self.fas_addons(fas) + extras
+        if fas:
             summary = next(iter(fas.values()))
-            warnings.append(
-                f"NCL fares are the same with or without Free at Sea; taking it adds "
-                f"${summary['fas_pp']:,.2f} per person in package gratuities/fees (see add-ons)."
-            )
+            if summary.get("fas_pp") is not None:
+                warnings.append(
+                    f"NCL fares are the same with or without Free at Sea; taking it adds "
+                    f"${summary['fas_pp']:,.2f} per person in package gratuities/fees (see add-ons)."
+                )
+        warnings.extend(extra_warnings)
+        research.sources += [u for u in extra_sources if u not in research.sources]
         if guests != 2:
             warnings.append(f"NCL prices are the average per person for {guests} guests in the stateroom.")
         return research
@@ -671,6 +838,227 @@ class NorwegianProvider:
                        "all-in price incl. taxes & port fees" if taxes is None else None),
                 source=source,
             ))
+        return out
+
+    # ── Extras: drinks, Wi-Fi, dining, excursions, service charges ─────
+
+    def shorex(self, itinerary_code: str, package_id: str) -> list[dict]:
+        data = self._json("GET", f"/api/vacation-builder/itinerary/{itinerary_code}/package/{package_id}/shorex")
+        return data if isinstance(data, list) else []
+
+    def travel_extras(self, package_id: str, type_code: str, category: str, guests: int,
+                      fare_codes: Optional[list[str]] = None) -> dict:
+        body = {
+            "packageId": package_id,
+            "stateroomFilters": [{
+                "id": "0", "mainCabin": True, "numberOfGuests": guests, "stateroomTypeCode": type_code,
+                "pricedCategoryCode": category, "fareCodes": fare_codes or [], "guests": [], "vouchers": [],
+            }],
+            "userFareCodes": [],
+        }
+        return self._json("POST", "/api/vacation-builder/travel-extras", body=body)
+
+    def ship_activities(self, ship_code: str) -> list[dict]:
+        data = self._json("GET", f"/api/vacation-builder/ships/{ship_code}/activities")
+        return data if isinstance(data, list) else []
+
+    def fetch_extras(self, itinerary_code: str, package_id: str, ship_code: str, guests: int,
+                     avail: Optional[dict]) -> tuple[list[AddOn], list[str], list[str]]:
+        """Everything NCL sells on top of the fare. Never raises: failures become warnings.
+
+        Sailing-specific (from the booking flow's own APIs): shore excursions offered on this
+        sailing, pre-paid service charges and travel protection for the cheapest room.
+        Published (ncl.com pages, not quoted for this sailing): excursion 'from' prices, Wi-Fi
+        plans, specialty-dining cover charges, the onboard open bar, Free at Sea Plus, and the
+        beverage flyer's soda / Starbucks® / water packages.
+        Returns (add-ons, warnings, sources)."""
+        warnings: list[str] = []
+        sources: list[str] = []
+        cheapest = None
+        if avail:
+            cats = self.available_categories(avail)
+            if cats:
+                t, c, _ = min(cats, key=lambda x: x[2])
+                cheapest = (t, c, self.fas_promo(avail, t))
+
+        def safe(label, fn, *args):
+            try:
+                return fn(*args)
+            except (ProviderError, httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+                log.warning("NCL %s failed: %s", label, exc)
+                warnings.append(f"NCL {label} couldn't be loaded: {exc}")
+                return None
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            f_shx = pool.submit(safe, "shore excursions", self.shorex, itinerary_code, package_id)
+            f_te = (pool.submit(safe, "service charges / travel protection", self.travel_extras, package_id,
+                                cheapest[0], cheapest[1], guests, cheapest[2]) if cheapest else None)
+            f_page = pool.submit(safe, "published package prices", self._text, FAS_PAGE)
+            f_act = pool.submit(safe, "specialty restaurants", self.ship_activities, ship_code) if ship_code else None
+
+            shx = f_shx.result() or []
+            ports: dict[str, str] = {}
+            for x in shx:
+                port = x.get("port") or {}
+                if port.get("code"):
+                    ports.setdefault(port["code"], port.get("title") or port["code"])
+            listings = dict(zip(ports, pool.map(
+                lambda code: safe(f"excursion prices for {ports[code]}", self._text,
+                                  "/shore-excursions/api/mobilePagination", {"portCode": code, "perPage": 100}),
+                ports)))
+            te = f_te.result() if f_te else None
+            page = f_page.result()
+            acts = f_act.result() if f_act else None
+
+        published = parse_fas_page(page) if page else {}
+        addons: list[AddOn] = []
+        addons += self.map_service_extras(te, guests)
+        addons += self.map_published_packages(published, self.base_url)
+        if acts is not None:
+            addons += self.map_restaurants(acts, published.get("cover") or {}, self.base_url)
+        addons += self.map_excursions(shx, {c: parse_port_excursions(h) for c, h in listings.items() if h},
+                                      self.base_url)
+
+        if page:
+            sources.append(self.base_url + FAS_PAGE)
+            if not published.get("wifi") or not published.get("cover"):
+                warnings.append("Couldn't read some published NCL prices (Wi-Fi plans or dining cover charges) "
+                                "from the Free at Sea page.")
+        if any(a.kind == "excursion" for a in addons):
+            sources.append(self.base_url + "/shore-excursions")
+        if published or acts is not None:
+            warnings.append(
+                "NCL Wi-Fi plans, specialty-dining cover charges, beverage packages bought onboard or outside "
+                "Free at Sea, and shore excursion prices are NCL's published 'from' prices, not quoted for this "
+                "sailing — verify before booking. Service charges and travel protection are quoted for this sailing."
+            )
+        return addons, warnings, sources
+
+    @staticmethod
+    def map_service_extras(te: Optional[dict], guests: int) -> list[AddOn]:
+        room = ((te or {}).get("staterooms") or [{}])[0]
+        out = []
+        ppsc = room.get("prepaidServices") or {}
+        if ppsc.get("pricePerPerson"):
+            desc = _clean(ppsc.get("description")) or None
+            out.append(AddOn(
+                kind="other",
+                name="Daily service charges (pre-paid)",
+                price=float(ppsc["pricePerPerson"]),
+                price_unit="per_person_per_day",
+                unit_label="per person (ages 3+), per day",
+                port=None,
+                description=desc,
+                source="ncl.com booking flow (travel extras)",
+            ))
+        for opt in (room.get("travelProtection") or {}).get("options") or []:
+            if not opt.get("price"):
+                continue
+            details = "; ".join(f"{d.get('title')}: {d.get('description')}" for d in opt.get("planDetails") or [])
+            out.append(AddOn(
+                kind="other",
+                name=f"Travel protection: {opt.get('name')}",
+                price=round(float(opt["price"]) / guests, 2),
+                price_unit="per_person",
+                unit_label="per person",
+                port=None,
+                description=(f"Quoted for this stateroom (${float(opt['price']):,.2f} for {guests} guest"
+                             f"{'s' if guests != 1 else ''}); depends on the fare. " + details).strip(),
+                source=opt.get("planDetailsLink") or "ncl.com booking flow (travel extras)",
+            ))
+        return out
+
+    @staticmethod
+    def map_published_packages(pub: dict, base_url: str = BASE_URL) -> list[AddOn]:
+        page = base_url + FAS_PAGE
+        out = []
+        if pub.get("fas_plus") is not None:
+            out.append(AddOn(
+                kind="beverage", name="Free at Sea Plus upgrade", price=pub["fas_plus"],
+                price_unit="per_person_per_day", unit_label="per person, per day", port=None,
+                description="Upgrade from Free at Sea: top-shelf spirits and premium wines, Starbucks®, "
+                            "streaming Wi-Fi, bottled water, 50% off extra specialty dining, pre-paid service "
+                            "charges. Published price.",
+                source=page))
+        if pub.get("open_bar"):
+            price, grat = pub["open_bar"]
+            out.append(AddOn(
+                kind="beverage", name="Unlimited Open Bar (bought onboard, without Free at Sea)", price=price,
+                price_unit="per_person_per_day", unit_label="per person, per day", port=None,
+                description=f"Only in the first two days of the cruise. Plus {grat}% gratuity and taxes "
+                            "(not included in the price). Published price.",
+                source=page))
+        for name, price, unit, label, desc in FLYER_BEVERAGES:
+            out.append(AddOn(
+                kind="beverage", name=name, price=price, price_unit=unit, unit_label=label, port=None,
+                description=desc + " Published price from NCL's 2026 beverage flyer; the flyer doesn't say "
+                                   "whether a service charge is added.",
+                source=base_url + BEVERAGE_FLYER))
+        for name, price, label in pub.get("wifi") or []:
+            out.append(AddOn(
+                kind="internet", name=name if name.lower().startswith("wi-fi") else f"Wi-Fi: {name}",
+                price=price, price_unit="per_device_per_day", unit_label=label, port=None,
+                description="Upgrade over Free at Sea's included 150 minutes. Published price.",
+                source=page))
+        return out
+
+    @staticmethod
+    def map_restaurants(acts: list[dict], cover: dict[str, float], base_url: str = BASE_URL) -> list[AddOn]:
+        out = []
+        for a in acts:
+            if "SPECIALTY_DINING" not in (a.get("categories") or []):
+                continue
+            statement = (a.get("pricingStatement") or "").lower()
+            if "cover" not in statement:
+                continue  # à la carte cafés / gelato
+            title = a.get("title") or ""
+            price = cover_charge(title, a.get("cuisine"), cover)
+            out.append(AddOn(
+                kind="dining", name=f"{title} (cover charge)", price=price,
+                price_unit="per_person", unit_label="per person, per meal", port=None,
+                description=(f"{a.get('cuisine') or 'Specialty'} restaurant on this ship. "
+                             + ("Published cover charge, plus taxes & fees; included (gratuity only) with the "
+                                "Free at Sea dining package." if price is not None else
+                                "Cover charge applies; NCL doesn't publish the amount for this restaurant.")),
+                source=base_url + FAS_PAGE))
+        return out
+
+    @staticmethod
+    def map_excursions(shx: list[dict], listings: dict[str, dict[str, dict]], base_url: str = BASE_URL) -> list[AddOn]:
+        """This sailing's excursions (booking-flow list) priced from each port's public listing."""
+        by_port: dict[str, list[dict]] = {}
+        for x in sorted(shx, key=lambda x: (not x.get("featured"), x.get("weight") or 0)):
+            by_port.setdefault((x.get("port") or {}).get("code") or "", []).append(x)
+        out = []
+        for port_code, items in by_port.items():
+            listing = listings.get(port_code) or {}
+            kept = 0
+            for x in items:
+                info = listing.get(x.get("code") or "") or {}
+                if info.get("adult") is None or kept >= MAX_EXCURSIONS_PER_PORT:
+                    continue
+                kept += 1
+                bits = []
+                if info.get("duration"):
+                    bits.append(info["duration"])
+                if info.get("child") is not None:
+                    bits.append(f"child from ${info['child']:,.2f}")
+                level = (x.get("difficulty") or {}).get("title") or info.get("level")
+                if level:
+                    bits.append(f"activity: {level}")
+                bits.append("published 'from' price")
+                name = x.get("title") or info.get("title") or x.get("code") or ""
+                per_unit = PER_UNIT_EXCURSION.search(name) is not None  # cabanas, villas, daybeds: one price
+                out.append(AddOn(
+                    kind="excursion",
+                    name=name,
+                    price=info["adult"],
+                    price_unit="flat" if per_unit else "per_person",
+                    unit_label="per cabana/villa/rental as named, from" if per_unit else "per adult, from",
+                    port=(x.get("port") or {}).get("title"),
+                    description="; ".join(bits),
+                    source=base_url + (info.get("href") or "/shore-excursions"),
+                ))
         return out
 
     # ── Add-ons (Free at Sea) ────────────────────────────────────────────
